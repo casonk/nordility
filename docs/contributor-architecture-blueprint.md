@@ -8,6 +8,8 @@ This document is a concise map of how CLI requests and Python API calls flow thr
 - PlantUML renders:
   - `docs/diagrams/repo-architecture.puml.png`
   - `docs/diagrams/repo-architecture.puml.svg`
+- Draw.io source: `docs/diagrams/repo-architecture.drawio`
+- Open with draw.io (desktop or https://app.diagrams.net) and export PNG/SVG from the File menu.
 
 Render with any local PlantUML installation:
 
