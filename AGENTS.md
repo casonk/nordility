@@ -17,6 +17,8 @@ The codebase is intentionally small and dependency-light. Keep changes narrow an
 - `src/nordility/__main__.py`: `python -m nordility` entry point
 - `src/nordility/__init__.py`: public re-exports
 - `tests/test_client.py`: unit tests for backend selection and command generation
+- `docs/contributor-architecture-blueprint.md`: repo architecture overview
+- `docs/diagrams/repo-architecture.puml`: architecture diagram source
 - `README.md`: install, CLI, and API usage
 - `pyproject.toml`: package metadata and console script definition
 
@@ -81,6 +83,7 @@ When modifying behavior, preserve these expectations unless the task says otherw
 - preserve the current CLI verbs: `connect`, `disconnect`, `change`, `list-groups`
 - keep user-facing success strings stable when possible; tests and callers may rely on them
 - keep environment variable support intact: `NORDILITY_EXECUTABLE`, `NORDVPN_EXECUTABLE`, `NORDILITY_BACKEND`
+- update the architecture docs when changing public flow or backend semantics: `docs/contributor-architecture-blueprint.md` and `docs/diagrams/repo-architecture.puml`
 
 If you add a command, backend option, or public function, update both `README.md` and tests in the same change.
 

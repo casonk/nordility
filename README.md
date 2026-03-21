@@ -10,6 +10,14 @@ It keeps the original workflow:
 
 It also adds a usable CLI, packaging metadata, and a small test suite.
 
+## Contributor Docs
+
+- Architecture blueprint: `docs/contributor-architecture-blueprint.md`
+- Diagram source: `docs/diagrams/repo-architecture.puml`
+- Rendered diagram targets:
+  - `docs/diagrams/repo-architecture.puml.png`
+  - `docs/diagrams/repo-architecture.puml.svg`
+
 ## Features
 
 - Windows-first support for the original `NordVPN.exe` automation flow
