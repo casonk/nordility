@@ -19,6 +19,7 @@ The codebase is intentionally small and dependency-light. Keep changes narrow an
 - `tests/test_client.py`: unit tests for backend selection and command generation
 - `docs/contributor-architecture-blueprint.md`: repo architecture overview
 - `docs/diagrams/repo-architecture.puml`: architecture diagram source
+- `docs/diagrams/repo-architecture.drawio`: draw.io architecture source
 - `README.md`: install, CLI, and API usage
 - `pyproject.toml`: package metadata and console script definition
 
@@ -84,6 +85,7 @@ When modifying behavior, preserve these expectations unless the task says otherw
 - keep user-facing success strings stable when possible; tests and callers may rely on them
 - keep environment variable support intact: `NORDILITY_EXECUTABLE`, `NORDVPN_EXECUTABLE`, `NORDILITY_BACKEND`
 - update the architecture docs when changing public flow or backend semantics: `docs/contributor-architecture-blueprint.md` and `docs/diagrams/repo-architecture.puml`
+- keep `docs/diagrams/repo-architecture.drawio` in sync with the PlantUML source when adjusting the flow
 
 If you add a command, backend option, or public function, update both `README.md` and tests in the same change.
 
