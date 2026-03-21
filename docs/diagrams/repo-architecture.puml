@@ -1,0 +1,72 @@
+@startuml
+
+title Nordility Repository Architecture (Contributor Blueprint)
+left to right direction
+!pragma layout elk
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam linetype ortho
+skinparam ArrowColor #2F4F4F
+skinparam ArrowThickness 2
+skinparam ArrowFontSize 12
+skinparam titleFontSize 26
+skinparam packageStyle rectangle
+skinparam packageFontSize 18
+skinparam packageFontStyle bold
+skinparam rectangleFontSize 12
+skinparam rectangleFontName Arial
+skinparam DefaultTextAlignment left
+skinparam LegendFontSize 14
+
+package "Entry Surface" as ENTRY_PANEL #F5F5F5 {
+  rectangle "CLI\nsrc/nordility/cli.py\n- argparse verbs: connect/disconnect/change/list-groups\n- logging setup\n- stdout/stderr + exit codes" as CLI #DAE8FC
+  rectangle "Module Entry\nsrc/nordility/__main__.py\n- python -m nordility" as MOD #DAE8FC
+  rectangle "Public Package Surface\nsrc/nordility/__init__.py\n- re-exports NordVPNClient\n- compatibility helpers" as API #DAE8FC
+}
+
+package "Configuration + Core Client" as CORE_PANEL #F5F5F5 {
+  rectangle "Configuration Resolution\nresolve_executable()\n- explicit arg\n- NORDILITY_EXECUTABLE\n- NORDVPN_EXECUTABLE\n- default Windows path\n\nresolve_backend()\n- auto / windows / cli\n- NORDILITY_BACKEND override" as CONFIG #D5E8D4
+
+  rectangle "NordVPNClient\n- connect / disconnect / change\n- list_groups / pick_group\n- build command tuples\n- dispatch to backend\n- inject launcher / runner / sleeper / rng" as CLIENT #D5E8D4
+
+  rectangle "Group Pools\nFAST_GROUPS / FULL_GROUPS\n- underscore-separated names\n- fast/full selection" as GROUPS #D5E8D4
+
+  rectangle "Result + Errors\nCommandResult\nConfigurationError\nCommandExecutionError\nNordilityError" as RESULT #D5E8D4
+}
+
+package "Execution Backends" as BACKEND_PANEL #F5F5F5 {
+  rectangle "Windows Backend\n- subprocess.Popen\n- NordVPN.exe flags: -c / -d / -g\n- preserves group underscores\n- optional post-launch sleep" as WIN #FFE6CC
+
+  rectangle "CLI Backend\n- subprocess.run\n- nordvpn connect/disconnect\n- converts underscores to spaces\n- captures stdout/stderr/return code" as CLIBACK #FFE6CC
+}
+
+package "Testing" as TEST_PANEL #F5F5F5 {
+  rectangle "tests/test_client.py\n- unittest\n- backend resolution\n- command construction\n- fake launcher/runner/sleeper\n- deterministic RNG injection" as TESTS #FFF2CC
+}
+
+MOD --> CLI
+CLI --> CLIENT : parsed subcommands
+API --> CLIENT : wrapper calls
+CONFIG --> CLIENT : executable + backend
+GROUPS --> CLIENT : fast/full pools
+CLIENT --> WIN : backend=windows
+CLIENT --> CLIBACK : backend=cli
+WIN --> RESULT : launch result or error
+CLIBACK --> RESULT : completed process or error
+RESULT --> CLI : print message / exit status
+TESTS ..> CLIENT : inject fakes
+TESTS ..> CONFIG
+TESTS ..> GROUPS
+
+legend right
+  == Primary Flows ==
+  CLI: argparse -> NordVPNClient -> backend command -> message/exit code
+  Python API: helper -> NordVPNClient -> CommandResult or legacy status string
+
+  == Key Commands ==
+  - PYTHONPATH=src python -m nordility --help
+  - PYTHONPATH=src python -m unittest discover -s tests
+endlegend
+
+@enduml
