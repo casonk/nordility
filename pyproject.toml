@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nordility"
+version = "0.1.0"
+description = "Simple NordVPN automation helpers extracted from citegres."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "Cason Konzer" },
+]
+keywords = ["nordvpn", "vpn", "automation"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Operating System :: OS Independent",
+]
+
+[project.scripts]
+nordility = "nordility.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
