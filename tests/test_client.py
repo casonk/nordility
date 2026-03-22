@@ -2,12 +2,19 @@ import random
 import unittest
 from subprocess import CompletedProcess
 
-from nordility.client import ConfigurationError, FAST_GROUPS, NordVPNClient, resolve_backend
+from nordility.client import (
+    ConfigurationError,
+    FAST_GROUPS,
+    NordVPNClient,
+    resolve_backend,
+)
 
 
 class NordVPNClientTests(unittest.TestCase):
     def test_resolve_backend_auto_detects_windows(self) -> None:
-        self.assertEqual(resolve_backend("C:/Program Files/NordVPN/NordVPN.exe", "auto"), "windows")
+        self.assertEqual(
+            resolve_backend("C:/Program Files/NordVPN/NordVPN.exe", "auto"), "windows"
+        )
 
     def test_resolve_backend_auto_detects_cli(self) -> None:
         self.assertEqual(resolve_backend("nordvpn", "auto"), "cli")
@@ -36,7 +43,10 @@ class NordVPNClientTests(unittest.TestCase):
 
         result = client.connect(group="United_States", wait_seconds=0)
 
-        self.assertEqual(launched_commands[0], ("C:/Program Files/NordVPN/NordVPN.exe", "-c", "-g", "United_States"))
+        self.assertEqual(
+            launched_commands[0],
+            ("C:/Program Files/NordVPN/NordVPN.exe", "-c", "-g", "United_States"),
+        )
         self.assertEqual(result.message, "VPN Connected to United_States")
 
     def test_cli_disconnect_uses_cli_verb(self) -> None:
