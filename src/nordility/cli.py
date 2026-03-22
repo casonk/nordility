@@ -8,8 +8,12 @@ from nordility.client import NordVPNClient, NordilityError
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Automate NordVPN connect/disconnect/rotation tasks.")
-    parser.add_argument("--executable", help="Path to NordVPN.exe or the nordvpn CLI executable.")
+    parser = argparse.ArgumentParser(
+        description="Automate NordVPN connect/disconnect/rotation tasks."
+    )
+    parser.add_argument(
+        "--executable", help="Path to NordVPN.exe or the nordvpn CLI executable."
+    )
     parser.add_argument(
         "--backend",
         choices=("auto", "windows", "cli"),
@@ -26,14 +30,33 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     connect_parser = subparsers.add_parser("connect", help="Connect to NordVPN.")
-    connect_parser.add_argument("--group", help="Country or server group name, for example United_States.")
-    connect_parser.add_argument("--wait", type=float, default=0, help="Seconds to sleep after launching the command.")
+    connect_parser.add_argument(
+        "--group", help="Country or server group name, for example United_States."
+    )
+    connect_parser.add_argument(
+        "--wait",
+        type=float,
+        default=0,
+        help="Seconds to sleep after launching the command.",
+    )
 
     disconnect_parser = subparsers.add_parser("disconnect", help="Disconnect NordVPN.")
-    disconnect_parser.add_argument("--wait", type=float, default=0, help="Seconds to sleep after launching the command.")
+    disconnect_parser.add_argument(
+        "--wait",
+        type=float,
+        default=0,
+        help="Seconds to sleep after launching the command.",
+    )
 
-    change_parser = subparsers.add_parser("change", help="Rotate to a new NordVPN country/server group.")
-    change_parser.add_argument("--speed", choices=("fast", "full"), default="fast", help="Country pool to choose from.")
+    change_parser = subparsers.add_parser(
+        "change", help="Rotate to a new NordVPN country/server group."
+    )
+    change_parser.add_argument(
+        "--speed",
+        choices=("fast", "full"),
+        default="fast",
+        help="Country pool to choose from.",
+    )
     change_parser.add_argument("--group", help="Explicit country or server group name.")
     change_parser.add_argument(
         "--wait",
@@ -41,8 +64,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="Seconds to sleep after launching the command. Defaults to 10 for fast or 30 for full.",
     )
 
-    list_parser = subparsers.add_parser("list-groups", help="List built-in server groups.")
-    list_parser.add_argument("--speed", choices=("fast", "full"), default="fast", help="Country pool to print.")
+    list_parser = subparsers.add_parser(
+        "list-groups", help="List built-in server groups."
+    )
+    list_parser.add_argument(
+        "--speed",
+        choices=("fast", "full"),
+        default="fast",
+        help="Country pool to print.",
+    )
 
     return parser
 
@@ -64,7 +94,9 @@ def main(argv: list[str] | None = None) -> int:
             print(result.message)
             return 0
         if args.command == "change":
-            result = client.change(speed=args.speed, group=args.group, wait_seconds=args.wait)
+            result = client.change(
+                speed=args.speed, group=args.group, wait_seconds=args.wait
+            )
             print(result.message)
             return 0
         if args.command == "list-groups":

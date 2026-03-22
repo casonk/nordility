@@ -6,7 +6,9 @@ from nordility.client import CommandResult, NordilityError
 
 class HelperTests(TestCase):
     @mock.patch("nordility.client.NordVPNClient")
-    def test_connect_vpn_server_returns_string_and_result(self, mock_client_cls) -> None:
+    def test_connect_vpn_server_returns_string_and_result(
+        self, mock_client_cls
+    ) -> None:
         mock_client = mock_client_cls.return_value
         result = CommandResult(command=("cmd",), message="VPN Connected", returncode=0)
         mock_client.connect.return_value = result
@@ -27,7 +29,9 @@ class HelperTests(TestCase):
     def test_change_vpn_server_returns_message(self, mock_client_cls) -> None:
         mock_client = mock_client_cls.return_value
         mock_client.change.return_value = CommandResult(
-            command=("cmd",), message="VPN Connection Successfully Redirected to United_States", returncode=0
+            command=("cmd",),
+            message="VPN Connection Successfully Redirected to United_States",
+            returncode=0,
         )
 
         self.assertIn("VPN Connection Successfully Redirected", change_vpn_server())
@@ -40,4 +44,6 @@ class HelperTests(TestCase):
         )
 
         self.assertEqual(disconnect_vpn_server(), "VPN Disconnected")
-        self.assertIs(disconnect_vpn_server(status=False), mock_client.disconnect.return_value)
+        self.assertIs(
+            disconnect_vpn_server(status=False), mock_client.disconnect.return_value
+        )
