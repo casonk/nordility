@@ -169,7 +169,9 @@ class NordVPNClient:
         self._sleeper = sleeper
         self._rng = rng or random.Random()
 
-    def connect(self, group: str | None = None, wait_seconds: float = 0) -> CommandResult:
+    def connect(
+        self, group: str | None = None, wait_seconds: float = 0
+    ) -> CommandResult:
         command = self._build_connect_command(group)
         result = self._execute(command, wait_seconds)
         if group:
@@ -260,7 +262,8 @@ class NordVPNClient:
         )
         if completed.returncode != 0:
             raise CommandExecutionError(
-                completed.stderr.strip() or f"NordVPN command failed with exit code {completed.returncode}"
+                completed.stderr.strip()
+                or f"NordVPN command failed with exit code {completed.returncode}"
             )
         if wait_seconds > 0:
             self._sleeper(wait_seconds)
