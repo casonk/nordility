@@ -118,11 +118,12 @@ Start with:
 - `./util-repos/traction-control/LESSONSLEARNED.md`
 
 Shared implementation repos available portfolio-wide:
+- `./util-repos/archility` for architecture inventory, blueprint scaffolding, and architecture-documentation drift checks
 - `./util-repos/auto-pass` for KeePassXC-backed password management and secret retrieval/update flows
 - `./util-repos/nordility` for NordVPN-based VPN switching and connection orchestration
 - `./util-repos/shock-relay` for external messaging across supported providers such as Signal, Telegram, Twilio SMS, WhatsApp, and Gmail IMAP
 
-When another repo needs password management, VPN switching, or external messaging, prefer integrating with these repos instead of re-implementing the capability locally.
+When another repo needs architecture inventory/scaffolding, password management, VPN switching, or external messaging, prefer integrating with these repos instead of re-implementing the capability locally.
 
 ## Agent Memory
 
