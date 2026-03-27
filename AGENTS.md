@@ -107,3 +107,11 @@ This project currently uses the standard library `unittest` framework. Match the
 - This project is cross-platform in intent, but the original workflow is Windows-first.
 - Avoid writing tests that require a real NordVPN installation or network access.
 - Favor small, explicit changes over abstractions; the current code is intentionally direct.
+
+## Agent Memory
+
+Use `./CHATHISTORY.md` as the standard local handoff file for this repo.
+
+- It is local-only and gitignored.
+- Read it after `AGENTS.md` when resuming work.
+- Keep entries brief and focused on backend behavior, tests, blockers, and next steps.
