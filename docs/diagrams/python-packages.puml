@@ -1,0 +1,14 @@
+@startuml packages_nordility
+set namespaceSeparator none
+package "nordility" as nordility {
+}
+package "nordility.__main__" as nordility.__main__ {
+}
+package "nordility.cli" as nordility.cli {
+}
+package "nordility.client" as nordility.client {
+}
+nordility --> nordility.client
+nordility.__main__ --> nordility.cli
+nordility.cli --> nordility.client
+@enduml
