@@ -1,41 +1,75 @@
+<?xml version='1.0' encoding='utf-8'?>
 <mxfile host="app.diagrams.net" modified="2026-03-22T00:00:00Z" agent="Codex GPT-5" version="24.7.17" type="device" compressed="false">
   <diagram id="repo-chart" name="Nordility Architecture">
     <mxGraphModel dx="1208" dy="657" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0">
       <root>
-        <mxCell id="0"/>
-        <mxCell id="1" parent="0"/>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
         <mxCell id="entry" value="Entry Surface\n• nordility CLI verbs\n• python -m nordility\n• compatibility helpers" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#1B4F72;fontColor=#111827;fontSize=14;" vertex="1" parent="1">
-          <mxGeometry x="40" y="40" width="220" height="120" as="geometry"/>
+          <mxGeometry x="40" y="40" width="220" height="120" as="geometry" />
         </mxCell>
         <mxCell id="config" value="Configuration\n• resolve_executable()\n• resolve_backend()\n• env var overrides" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#1B4F72;fontColor=#111827;fontSize=12;" vertex="1" parent="1">
-          <mxGeometry x="300" y="40" width="220" height="120" as="geometry"/>
+          <mxGeometry x="300" y="40" width="220" height="120" as="geometry" />
         </mxCell>
         <mxCell id="client" value="Core Client\n• NordVPNClient\n• connect/disconnect/change\n• group pools + wait defaults" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#1B4F72;fontColor=#111827;fontSize=12;" vertex="1" parent="1">
-          <mxGeometry x="560" y="40" width="220" height="120" as="geometry"/>
+          <mxGeometry x="560" y="40" width="220" height="120" as="geometry" />
         </mxCell>
         <mxCell id="backend" value="Execution Backends\n• Windows: NordVPN.exe flags\n• CLI: nordvpn verbs + underscore → space" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFE6CC;strokeColor=#1B4F72;fontColor=#111827;fontSize=12;" vertex="1" parent="1">
-          <mxGeometry x="820" y="40" width="220" height="120" as="geometry"/>
+          <mxGeometry x="820" y="40" width="220" height="120" as="geometry" />
         </mxCell>
         <mxCell id="result" value="Result + Errors\n• CommandResult\n• NordilityError propagation" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F8D7DA;strokeColor=#1B4F72;fontColor=#111827;fontSize=12;" vertex="1" parent="1">
-          <mxGeometry x="1080" y="40" width="220" height="120" as="geometry"/>
+          <mxGeometry x="1080" y="40" width="220" height="120" as="geometry" />
         </mxCell>
         <mxCell id="test" value="Testing Layer\n• tests/test_client.py\n• fake launcher/runner/sleeper\n• deterministic RNG" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#E9C2EF;strokeColor=#1B4F72;fontColor=#111827;fontSize=12;" vertex="1" parent="1">
-          <mxGeometry x="1340" y="40" width="220" height="120" as="geometry"/>
+          <mxGeometry x="1340" y="40" width="220" height="120" as="geometry" />
         </mxCell>
-        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1F4E79;" edge="1" source="entry" target="config" parent="1">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1F4E79;jumpStyle=arc;jumpSize=10;" edge="1" source="entry" target="config" parent="1">
+          <mxGeometry relative="1" as="geometry" archilityManagedRoute="1">
+            <Array as="points">
+              <mxPoint x="284" y="100" />
+              <mxPoint x="284" y="64" />
+              <mxPoint x="276" y="64" />
+              <mxPoint x="276" y="100" />
+            </Array>
+          </mxGeometry>
         </mxCell>
-        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1F4E79;" edge="1" source="config" target="client" parent="1">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1F4E79;jumpStyle=arc;jumpSize=10;" edge="1" source="config" target="client" parent="1">
+          <mxGeometry relative="1" as="geometry" archilityManagedRoute="1">
+            <Array as="points">
+              <mxPoint x="544" y="100" />
+              <mxPoint x="544" y="82" />
+              <mxPoint x="536" y="82" />
+              <mxPoint x="536" y="100" />
+            </Array>
+          </mxGeometry>
         </mxCell>
-        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1F4E79;" edge="1" source="client" target="backend" parent="1">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1F4E79;jumpStyle=arc;jumpSize=10;" edge="1" source="client" target="backend" parent="1">
+          <mxGeometry relative="1" as="geometry" archilityManagedRoute="1">
+            <Array as="points">
+              <mxPoint x="804" y="100" />
+              <mxPoint x="796" y="100" />
+            </Array>
+          </mxGeometry>
         </mxCell>
-        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1F4E79;" edge="1" source="backend" target="result" parent="1">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1F4E79;jumpStyle=arc;jumpSize=10;" edge="1" source="backend" target="result" parent="1">
+          <mxGeometry relative="1" as="geometry" archilityManagedRoute="1">
+            <Array as="points">
+              <mxPoint x="1064" y="100" />
+              <mxPoint x="1064" y="118" />
+              <mxPoint x="1056" y="118" />
+              <mxPoint x="1056" y="100" />
+            </Array>
+          </mxGeometry>
         </mxCell>
-        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1F4E79;" edge="1" source="result" target="test" parent="1">
-          <mxGeometry relative="1" as="geometry"/>
+        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1F4E79;jumpStyle=arc;jumpSize=10;" edge="1" source="result" target="test" parent="1">
+          <mxGeometry relative="1" as="geometry" archilityManagedRoute="1">
+            <Array as="points">
+              <mxPoint x="1324" y="100" />
+              <mxPoint x="1324" y="136" />
+              <mxPoint x="1316" y="136" />
+              <mxPoint x="1316" y="100" />
+            </Array>
+          </mxGeometry>
         </mxCell>
       </root>
     </mxGraphModel>
