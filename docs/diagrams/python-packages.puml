@@ -1,13 +1,11 @@
 @startuml packages_nordility
 set namespaceSeparator none
-package "nordility" as nordility {
-}
-package "nordility.__main__" as nordility.__main__ {
-}
-package "nordility.cli" as nordility.cli {
-}
-package "nordility.client" as nordility.client {
-}
+top to bottom direction
+skinparam componentStyle rectangle
+rectangle "nordility\n0 child pkg, 3 modules\n4 python files\nexamples: __main__, cli, client" as nordility
+rectangle "nordility.__main__\n1 python file" as nordility.__main__
+rectangle "nordility.cli\n1 python file" as nordility.cli
+rectangle "nordility.client\n1 python file" as nordility.client
 nordility --> nordility.client
 nordility.__main__ --> nordility.cli
 nordility.cli --> nordility.client
