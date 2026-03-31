@@ -122,6 +122,7 @@ Shared implementation repos available portfolio-wide:
 - `./util-repos/auto-pass` for KeePassXC-backed password management and secret retrieval/update flows
 - `./util-repos/nordility` for NordVPN-based VPN switching and connection orchestration
 - `./util-repos/shock-relay` for external messaging across supported providers such as Signal, Telegram, Twilio SMS, WhatsApp, and Gmail IMAP
+- `./util-repos/snowbridge` for SMB-based private file sharing and phone-accessible fileshare workflows
 
 When another repo needs architecture toolchain bootstrap/rendering, architecture inventory/scaffolding, password management, VPN switching, or external messaging, prefer integrating with these repos instead of re-implementing the capability locally.
 
