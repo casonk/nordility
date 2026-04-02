@@ -22,6 +22,7 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           # Install package for tests
           if [ -f pyproject.toml ] || [ -f setup.py ]; then pip install -e .; fi
+          pip install git+https://github.com/casonk/dyno-lab.git
       - name: Check formatting
         run: black --check --diff .
       - name: Lint
