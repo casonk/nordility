@@ -21,6 +21,12 @@ classifiers = [
 [project.scripts]
 nordility = "nordility.cli:main"
 
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "dyno_lab @ git+https://github.com/casonk/dyno-lab.git",
+]
 [tool.setuptools]
 package-dir = { "" = "src" }
 
