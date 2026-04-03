@@ -155,7 +155,10 @@ class NordVPNClientTests(unittest.TestCase):
         )
 
         with mock.patch("nordility.client._resolve_keepass_token", return_value="tok"):
-            result = client.connect(auto_login=True, keepass_entry="Nord_VPN#access-token")
+            result = client.connect(
+                auto_login=True,
+                keepass_entry="vpn/provider#access-token",
+            )
 
         self.assertEqual(calls[0], ("nordvpn", "connect"))
         self.assertEqual(calls[1], ("nordvpn", "login", "--token", "tok"))
