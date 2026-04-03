@@ -170,7 +170,9 @@ def _get_wireguard_peer_endpoints(
     try:
         result = runner(cmd, capture_output=True, text=True, check=False)
         if result.returncode != 0:
-            result = runner(["sudo", "-n"] + cmd, capture_output=True, text=True, check=False)
+            result = runner(
+                ["sudo", "-n"] + cmd, capture_output=True, text=True, check=False
+            )
         if result.returncode != 0:
             return {}
         peers: dict[str, str] = {}
@@ -220,7 +222,9 @@ def _refresh_wireguard_peers(
                     # Retry with sudo -n (non-interactive; no-op if no sudoers rule).
                     result = runner(
                         ["sudo", "-n"] + cmd,
-                        capture_output=True, text=True, check=False,
+                        capture_output=True,
+                        text=True,
+                        check=False,
                     )
                 if result.returncode == 0:
                     any_set = True
