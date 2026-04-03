@@ -18,12 +18,15 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install black pylint pytest
+          pip install black ruff pylint pytest
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           # Install package for tests
           if [ -f pyproject.toml ] || [ -f setup.py ]; then pip install -e .; fi
           pip install git+https://github.com/casonk/dyno-lab.git
-      - name: Check formatting
+      - name: Check formatting (ruff format)
+        run: ruff format --check .
+      # TODO: remove black once ruff format is confirmed stable portfolio-wide
+      - name: Check formatting (black — deprecated)
         run: black --check --diff .
       - name: Lint
         run: |
