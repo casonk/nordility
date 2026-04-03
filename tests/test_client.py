@@ -13,6 +13,7 @@ from nordility.client import (
     _is_not_logged_in,
     _refresh_wireguard_peers,
     resolve_backend,
+    resolve_executable,
 )
 
 
@@ -28,6 +29,18 @@ class NordVPNClientTests(unittest.TestCase):
     def test_invalid_backend_raises_configuration_error(self) -> None:
         with self.assertRaises(ConfigurationError):
             resolve_backend("nordvpn", "bad-backend")
+
+    def test_resolve_executable_uses_which_on_linux(self) -> None:
+        with mock.patch("nordility.client.shutil.which", return_value="/usr/bin/nordvpn"):
+            with mock.patch.dict("os.environ", {}, clear=True):
+                result = resolve_executable(None)
+        self.assertEqual(result, "/usr/bin/nordvpn")
+
+    def test_resolve_executable_falls_back_to_windows_path_when_not_found(self) -> None:
+        with mock.patch("nordility.client.shutil.which", return_value=None):
+            with mock.patch.dict("os.environ", {}, clear=True):
+                result = resolve_executable(None)
+        self.assertIn("NordVPN.exe", result)
 
     def test_pick_group_uses_fast_pool(self) -> None:
         client = NordVPNClient(executable="nordvpn", rng=random.Random(1))
