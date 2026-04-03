@@ -11,6 +11,7 @@ from nordility.client import (
     _get_wireguard_peer_endpoints,
     _is_not_logged_in,
     _refresh_wireguard_peers,
+    _restore_wireguard_routing,
     resolve_backend,
     resolve_executable,
 )
@@ -358,6 +359,160 @@ class WireGuardRestoreTests(unittest.TestCase):
         result = client.change(restore_wireguard=True)
 
         self.assertNotIn("WireGuard", result.message)
+
+
+class WireGuardRoutingRestoreTests(unittest.TestCase):
+    def _make_runner(self, responses: dict[tuple, CompletedProcess]):
+        def fake_runner(command, capture_output, text, check):
+            return responses.get(tuple(command), CompletedProcess(command, 0, stdout="", stderr=""))
+
+        return fake_runner
+
+    def test_sets_fwmark_and_adds_rule_when_not_present(self) -> None:
+        calls: list[tuple] = []
+
+        def runner(command, capture_output, text, check):
+            calls.append(tuple(command))
+            if tuple(command) == ("ip", "rule", "show"):
+                return CompletedProcess(command, 0, stdout="32766:\tfrom all lookup main\n", stderr="")
+            return CompletedProcess(command, 0, stdout="", stderr="")
+
+        restored = _restore_wireguard_routing(runner, ["wg0"], fwmark=51820)
+
+        self.assertEqual(restored, ["wg0"])
+        self.assertIn(("wg", "set", "wg0", "fwmark", "51820"), calls)
+        self.assertIn(
+            ("ip", "rule", "add", "fwmark", "51820", "lookup", "main", "priority", "100"), calls
+        )
+
+    def test_skips_ip_rule_add_when_already_present(self) -> None:
+        calls: list[tuple] = []
+
+        def runner(command, capture_output, text, check):
+            calls.append(tuple(command))
+            if tuple(command) == ("ip", "rule", "show"):
+                return CompletedProcess(
+                    command, 0, stdout="100:\tfrom all fwmark 0xca6c lookup main\n", stderr=""
+                )
+            return CompletedProcess(command, 0, stdout="", stderr="")
+
+        _restore_wireguard_routing(runner, ["wg0"], fwmark=51820)
+
+        add_cmd = ("ip", "rule", "add", "fwmark", "51820", "lookup", "main", "priority", "100")
+        self.assertNotIn(add_cmd, calls)
+
+    def test_retries_fwmark_with_sudo_on_permission_failure(self) -> None:
+        calls: list[tuple] = []
+        responses = {
+            ("wg", "set", "wg0", "fwmark", "51820"): CompletedProcess(
+                [], 1, stdout="", stderr="Operation not permitted"
+            ),
+            ("sudo", "-n", "wg", "set", "wg0", "fwmark", "51820"): CompletedProcess(
+                [], 0, stdout="", stderr=""
+            ),
+            ("ip", "rule", "show"): CompletedProcess([], 0, stdout="", stderr=""),
+        }
+
+        def runner(command, capture_output, text, check):
+            calls.append(tuple(command))
+            return responses.get(tuple(command), CompletedProcess(command, 0, stdout="", stderr=""))
+
+        restored = _restore_wireguard_routing(runner, ["wg0"], fwmark=51820)
+
+        self.assertEqual(restored, ["wg0"])
+        self.assertIn(("sudo", "-n", "wg", "set", "wg0", "fwmark", "51820"), calls)
+
+    def test_retries_ip_rule_add_with_sudo_on_permission_failure(self) -> None:
+        calls: list[tuple] = []
+        responses = {
+            ("ip", "rule", "show"): CompletedProcess([], 0, stdout="", stderr=""),
+            ("ip", "rule", "add", "fwmark", "51820", "lookup", "main", "priority", "100"): CompletedProcess(
+                [], 1, stdout="", stderr="Operation not permitted"
+            ),
+            (
+                "sudo", "-n", "ip", "rule", "add", "fwmark", "51820", "lookup", "main", "priority", "100"
+            ): CompletedProcess([], 0, stdout="", stderr=""),
+        }
+
+        def runner(command, capture_output, text, check):
+            calls.append(tuple(command))
+            return responses.get(tuple(command), CompletedProcess(command, 0, stdout="", stderr=""))
+
+        _restore_wireguard_routing(runner, ["wg0"], fwmark=51820)
+
+        self.assertIn(
+            ("sudo", "-n", "ip", "rule", "add", "fwmark", "51820", "lookup", "main", "priority", "100"),
+            calls,
+        )
+
+    def test_returns_empty_when_fwmark_set_fails(self) -> None:
+        def runner(command, capture_output, text, check):
+            if "fwmark" in command and "wg" in command:
+                return CompletedProcess(command, 1, stdout="", stderr="error")
+            return CompletedProcess(command, 0, stdout="", stderr="")
+
+        restored = _restore_wireguard_routing(runner, ["wg0"], fwmark=51820)
+
+        self.assertEqual(restored, [])
+
+    def test_change_cli_restores_routing_with_restore_wireguard(self) -> None:
+        calls: list[tuple] = []
+        wg_responses = {
+            ("wg", "show", "interfaces"): CompletedProcess([], 0, stdout="wg0\n", stderr=""),
+            ("wg", "show", "wg0", "endpoints"): CompletedProcess(
+                [], 0, stdout="PUBKEY\t10.0.0.1:51820\n", stderr=""
+            ),
+            ("ip", "rule", "show"): CompletedProcess([], 0, stdout="", stderr=""),
+        }
+
+        def fake_runner(command, capture_output, text, check):
+            calls.append(tuple(command))
+            return wg_responses.get(tuple(command), CompletedProcess(command, 0, stdout="ok", stderr=""))
+
+        client = NordVPNClient(
+            executable="nordvpn",
+            backend="cli",
+            runner=fake_runner,
+            sleeper=lambda _: None,
+            rng=random.Random(1),
+        )
+
+        result = client.change(restore_wireguard=True, wireguard_fwmark=51820)
+
+        self.assertIn("WireGuard refreshed on wg0", result.message)
+        self.assertIn("routing restored on wg0", result.message)
+        self.assertIn(("wg", "set", "wg0", "fwmark", "51820"), calls)
+
+    def test_change_windows_backend_skips_routing_restore(self) -> None:
+        calls: list[tuple] = []
+        wg_responses = {
+            ("wg", "show", "interfaces"): CompletedProcess([], 0, stdout="wg0\n", stderr=""),
+            ("wg", "show", "wg0", "endpoints"): CompletedProcess(
+                [], 0, stdout="PUBKEY\t10.0.0.1:51820\n", stderr=""
+            ),
+        }
+
+        def fake_runner(command, capture_output, text, check):
+            calls.append(tuple(command))
+            return wg_responses.get(tuple(command), CompletedProcess(command, 0, stdout="ok", stderr=""))
+
+        def fake_launcher(command):
+            calls.append(tuple(command))
+            return object()
+
+        client = NordVPNClient(
+            executable="C:/Program Files/NordVPN/NordVPN.exe",
+            backend="windows",
+            launcher=fake_launcher,
+            runner=fake_runner,
+            sleeper=lambda _: None,
+            rng=random.Random(1),
+        )
+
+        result = client.change(restore_wireguard=True, wireguard_fwmark=51820)
+
+        self.assertNotIn("routing restored", result.message)
+        self.assertNotIn(("ip", "rule", "show"), calls)
 
 
 if __name__ == "__main__":
