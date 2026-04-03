@@ -220,7 +220,35 @@ class WireGuardRestoreTests(unittest.TestCase):
         self.assertEqual(result, {"PUBKEY1": "203.0.113.1:51820"})
         self.assertNotIn("PUBKEY2", result)
 
-    def test_refresh_peers_calls_wg_set(self) -> None:
+    def test_refresh_peers_retries_with_sudo_on_permission_failure(self) -> None:
+        real_calls: list[tuple] = []
+        responses = {
+            ("wg", "show", "interfaces"): CompletedProcess(
+                [], 0, stdout="wg0\n", stderr=""
+            ),
+            ("wg", "show", "wg0", "endpoints"): CompletedProcess(
+                [], 0, stdout="PUBKEY\t203.0.113.1:51820\n", stderr=""
+            ),
+            # plain wg set fails (permission denied)
+            ("wg", "set", "wg0", "peer", "PUBKEY", "endpoint", "203.0.113.1:51820"):
+                CompletedProcess([], 1, stdout="", stderr="Operation not permitted"),
+            # sudo -n wg set succeeds
+            ("sudo", "-n", "wg", "set", "wg0", "peer", "PUBKEY", "endpoint", "203.0.113.1:51820"):
+                CompletedProcess([], 0, stdout="", stderr=""),
+        }
+
+        def runner(command, capture_output, text, check):
+            real_calls.append(tuple(command))
+            return responses.get(tuple(command), CompletedProcess(command, 0, stdout="", stderr=""))
+
+        interfaces = _discover_wireguard_interfaces(runner)
+        refreshed = _refresh_wireguard_peers(runner, interfaces)
+
+        self.assertEqual(refreshed, ["wg0"])
+        self.assertIn(
+            ("sudo", "-n", "wg", "set", "wg0", "peer", "PUBKEY", "endpoint", "203.0.113.1:51820"),
+            real_calls,
+        )
         calls = []
 
         def fake_runner(command, capture_output, text, check):
