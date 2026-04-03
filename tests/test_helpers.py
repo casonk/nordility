@@ -1,4 +1,4 @@
-from unittest import mock, TestCase
+from unittest import TestCase, mock
 
 from nordility import change_vpn_server, connect_vpn_server, disconnect_vpn_server
 from nordility.client import CommandResult, NordilityError
@@ -6,9 +6,7 @@ from nordility.client import CommandResult, NordilityError
 
 class HelperTests(TestCase):
     @mock.patch("nordility.client.NordVPNClient")
-    def test_connect_vpn_server_returns_string_and_result(
-        self, mock_client_cls
-    ) -> None:
+    def test_connect_vpn_server_returns_string_and_result(self, mock_client_cls) -> None:
         mock_client = mock_client_cls.return_value
         result = CommandResult(command=("cmd",), message="VPN Connected", returncode=0)
         mock_client.connect.return_value = result
@@ -44,6 +42,4 @@ class HelperTests(TestCase):
         )
 
         self.assertEqual(disconnect_vpn_server(), "VPN Disconnected")
-        self.assertIs(
-            disconnect_vpn_server(status=False), mock_client.disconnect.return_value
-        )
+        self.assertIs(disconnect_vpn_server(status=False), mock_client.disconnect.return_value)
