@@ -24,7 +24,7 @@ class CLITests(TestCase):
         self.assertEqual(exit_code, 0)
         self.assertIn("VPN Connected", stdout.getvalue())
         mock_client.connect.assert_called_once_with(
-            group=None, wait_seconds=0, auto_login=False, keepass_entry="Nord_VPN"
+            group=None, wait_seconds=0, auto_login=False, keepass_entry="Nord_VPN#access-token"
         )
 
     @mock.patch("nordility.cli.NordVPNClient")
@@ -80,7 +80,7 @@ class CLITests(TestCase):
 
         main(["login"])
 
-        mock_client.login.assert_called_once_with(token=None, keepass_entry="Nord_VPN")
+        mock_client.login.assert_called_once_with(token=None, keepass_entry="Nord_VPN#access-token")
 
     @mock.patch("nordility.cli.NordVPNClient")
     def test_connect_passes_auto_login_flag(self, mock_client_cls) -> None:
@@ -94,5 +94,5 @@ class CLITests(TestCase):
         main(["connect", "--auto-login"])
 
         mock_client.connect.assert_called_once_with(
-            group=None, wait_seconds=0, auto_login=True, keepass_entry="Nord_VPN"
+            group=None, wait_seconds=0, auto_login=True, keepass_entry="Nord_VPN#access-token"
         )
