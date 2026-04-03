@@ -234,10 +234,15 @@ def _restore_wireguard_routing(
             LOGGER.debug("ip rule for fwmark %s already present; skipping", fwmark_hex)
             return restored
         add_cmd = [
-            "ip", "rule", "add",
-            "fwmark", str(fwmark),
-            "lookup", "main",
-            "priority", str(ip_rule_priority),
+            "ip",
+            "rule",
+            "add",
+            "fwmark",
+            str(fwmark),
+            "lookup",
+            "main",
+            "priority",
+            str(ip_rule_priority),
         ]
         add_result = runner(add_cmd, capture_output=True, text=True, check=False)
         if add_result.returncode != 0:
@@ -472,8 +477,7 @@ class NordVPNClient:
                     # /etc/wireguard/nordlynx.conf) so we don't overwrite
                     # their internal fwmark and break their own routing.
                     routing_candidates = [
-                        i for i in interfaces
-                        if Path(f"/etc/wireguard/{i}.conf").exists()
+                        i for i in interfaces if Path(f"/etc/wireguard/{i}.conf").exists()
                     ]
                     if routing_candidates:
                         LOGGER.info(
@@ -485,7 +489,9 @@ class NordVPNClient:
                         if routing_restored:
                             wg_suffix += f"; routing restored on {', '.join(routing_restored)}"
                     else:
-                        LOGGER.debug("No user-managed WireGuard interfaces found; skipping routing restore.")
+                        LOGGER.debug(
+                            "No user-managed WireGuard interfaces found; skipping routing restore."
+                        )
             else:
                 LOGGER.debug("No active WireGuard interfaces discovered; skipping restore.")
 
