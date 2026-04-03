@@ -2,7 +2,9 @@ import io
 from unittest import TestCase, mock
 
 from nordility.cli import main
-from nordility.client import CommandResult, NordilityError
+from nordility.client import CommandResult, DEFAULT_KEEPASS_ENTRY, NordilityError
+
+_DEFAULT_KEEPASS_DEFAULTS = ("infra", DEFAULT_KEEPASS_ENTRY)
 
 
 class CLITests(TestCase):
@@ -16,7 +18,10 @@ class CLITests(TestCase):
         )
 
         stdout = io.StringIO()
-        with mock.patch("sys.stdout", new=stdout):
+        with (
+            mock.patch("nordility.cli._resolve_keepass_defaults", return_value=_DEFAULT_KEEPASS_DEFAULTS),
+            mock.patch("sys.stdout", new=stdout),
+        ):
             exit_code = main(["connect"])
 
         self.assertEqual(exit_code, 0)
@@ -25,7 +30,8 @@ class CLITests(TestCase):
             group=None,
             wait_seconds=0,
             auto_login=False,
-            keepass_entry="Nord_VPN#access-token",
+            keepass_entry=DEFAULT_KEEPASS_ENTRY,
+            keepass_profile="infra",
         )
 
     @mock.patch("nordility.cli.NordVPNClient")
@@ -34,7 +40,10 @@ class CLITests(TestCase):
         mock_client.list_groups.return_value = ("United_States", "Japan")
 
         stdout = io.StringIO()
-        with mock.patch("sys.stdout", new=stdout):
+        with (
+            mock.patch("nordility.cli._resolve_keepass_defaults", return_value=_DEFAULT_KEEPASS_DEFAULTS),
+            mock.patch("sys.stdout", new=stdout),
+        ):
             exit_code = main(["list-groups"])
 
         self.assertEqual(exit_code, 0)
@@ -47,7 +56,10 @@ class CLITests(TestCase):
         mock_client.connect.side_effect = NordilityError("boom")
 
         stderr = io.StringIO()
-        with mock.patch("sys.stderr", new=stderr):
+        with (
+            mock.patch("nordility.cli._resolve_keepass_defaults", return_value=_DEFAULT_KEEPASS_DEFAULTS),
+            mock.patch("sys.stderr", new=stderr),
+        ):
             exit_code = main(["connect"])
 
         self.assertEqual(exit_code, 1)
@@ -63,12 +75,19 @@ class CLITests(TestCase):
         )
 
         stdout = io.StringIO()
-        with mock.patch("sys.stdout", new=stdout):
+        with (
+            mock.patch("nordility.cli._resolve_keepass_defaults", return_value=_DEFAULT_KEEPASS_DEFAULTS),
+            mock.patch("sys.stdout", new=stdout),
+        ):
             exit_code = main(["login", "--token", "tok"])
 
         self.assertEqual(exit_code, 0)
         self.assertIn("NordVPN Logged In", stdout.getvalue())
-        mock_client.login.assert_called_once_with(token="tok", keepass_entry=None)
+        mock_client.login.assert_called_once_with(
+            token="tok",
+            keepass_entry=None,
+            keepass_profile="infra",
+        )
 
     @mock.patch("nordility.cli.NordVPNClient")
     def test_login_subcommand_defaults_to_keepass_entry(self, mock_client_cls) -> None:
@@ -79,9 +98,14 @@ class CLITests(TestCase):
             returncode=0,
         )
 
-        main(["login"])
+        with mock.patch("nordility.cli._resolve_keepass_defaults", return_value=_DEFAULT_KEEPASS_DEFAULTS):
+            main(["login"])
 
-        mock_client.login.assert_called_once_with(token=None, keepass_entry="Nord_VPN#access-token")
+        mock_client.login.assert_called_once_with(
+            token=None,
+            keepass_entry=DEFAULT_KEEPASS_ENTRY,
+            keepass_profile="infra",
+        )
 
     @mock.patch("nordility.cli.NordVPNClient")
     def test_connect_passes_auto_login_flag(self, mock_client_cls) -> None:
@@ -92,13 +116,35 @@ class CLITests(TestCase):
             returncode=0,
         )
 
-        main(["connect", "--auto-login"])
+        with mock.patch("nordility.cli._resolve_keepass_defaults", return_value=_DEFAULT_KEEPASS_DEFAULTS):
+            main(["connect", "--auto-login"])
 
         mock_client.connect.assert_called_once_with(
             group=None,
             wait_seconds=0,
             auto_login=True,
-            keepass_entry="Nord_VPN#access-token",
+            keepass_entry=DEFAULT_KEEPASS_ENTRY,
+            keepass_profile="infra",
+        )
+
+    @mock.patch("nordility.cli.NordVPNClient")
+    def test_connect_passes_custom_keepass_profile(self, mock_client_cls) -> None:
+        mock_client = mock_client_cls.return_value
+        mock_client.connect.return_value = CommandResult(
+            command=("nordvpn", "connect"),
+            message="VPN Connected",
+            returncode=0,
+        )
+
+        with mock.patch("nordility.cli._resolve_keepass_defaults", return_value=_DEFAULT_KEEPASS_DEFAULTS):
+            main(["connect", "--keepass-profile", "work"])
+
+        mock_client.connect.assert_called_once_with(
+            group=None,
+            wait_seconds=0,
+            auto_login=False,
+            keepass_entry=DEFAULT_KEEPASS_ENTRY,
+            keepass_profile="work",
         )
 
     @mock.patch("nordility.cli.NordVPNClient")
@@ -112,10 +158,36 @@ class CLITests(TestCase):
         )
 
         stdout = io.StringIO()
-        with mock.patch("sys.stdout", new=stdout):
+        with (
+            mock.patch("nordility.cli._resolve_keepass_defaults", return_value=_DEFAULT_KEEPASS_DEFAULTS),
+            mock.patch("sys.stdout", new=stdout),
+        ):
             exit_code = main(["change", "--restore-wireguard"])
 
         self.assertEqual(exit_code, 0)
         call_kwargs = mock_client.change.call_args
         self.assertTrue(call_kwargs.kwargs.get("restore_wireguard"))
         self.assertIn("WireGuard refreshed", stdout.getvalue())
+
+    @mock.patch("nordility.cli.NordVPNClient")
+    def test_repo_auto_pass_config_overrides_cli_defaults(self, mock_client_cls) -> None:
+        mock_client = mock_client_cls.return_value
+        mock_client.connect.return_value = CommandResult(
+            command=("nordvpn", "connect"),
+            message="VPN Connected",
+            returncode=0,
+        )
+
+        with mock.patch(
+            "nordility.cli._resolve_keepass_defaults",
+            return_value=("work", "vpn/custom-token"),
+        ):
+            main(["connect"])
+
+        mock_client.connect.assert_called_once_with(
+            group=None,
+            wait_seconds=0,
+            auto_login=False,
+            keepass_entry="vpn/custom-token",
+            keepass_profile="work",
+        )

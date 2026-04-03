@@ -57,6 +57,8 @@ The accepted backends are:
 
 `auto` infers `windows` for `.exe` executables and `cli` otherwise.
 
+For auto-pass-backed login defaults, copy [auto-pass.example.ini](/mnt/4tb-m2/git/util-repos/nordility/config/auto-pass.example.ini) to `config/auto-pass.ini`. The CLI will use that file as the default `--keepass-profile` and `--keepass-entry` source for `login`, `connect --auto-login`, and `change --auto-login`.
+
 ## Usage
 
 ```bash

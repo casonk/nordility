@@ -113,27 +113,60 @@ NOT_LOGGED_IN_MARKERS = (
     "please log in",
     "you are not logged in",
 )
+ENTRY_NOT_FOUND_MARKERS = (
+    "not found",
+    "no entry",
+    "could not find",
+)
 
 _AUTO_PASS_ROOT = Path(__file__).resolve().parent.parent.parent.parent / "auto-pass"
+DEFAULT_KEEPASS_ENTRY = "vpn/provider#access-token"
+DEFAULT_KEEPASS_PROFILE = "infra"
 
 
-def _resolve_keepass_token(keepass_entry: str) -> str:
+def _candidate_keepass_entries(entry: str) -> tuple[str, ...]:
+    normalized = entry.strip()
+    if not normalized:
+        return ()
+    candidates = [normalized]
+    if "/" not in normalized:
+        candidates.append(f"nordvpn/{normalized}")
+    return tuple(dict.fromkeys(candidates))
+
+
+def _resolve_keepass_token(
+    keepass_entry: str,
+    keepass_profile: str | None = DEFAULT_KEEPASS_PROFILE,
+) -> str:
     """Resolve the NordVPN access token from a KeePassXC entry via auto-pass.
 
     Reads the ``Password`` field of the entry. By default the entry is
-    ``Nord_VPN#access-token``.
+    ``vpn/provider#access-token`` from the ``infra`` profile.
     """
     _src = str(_AUTO_PASS_ROOT / "src")
     if _src not in sys.path:
         sys.path.insert(0, _src)
     from auto_pass.envfile import load_config_environment  # noqa: PLC0415
+    from auto_pass.keepassxc import KeepassCommandError  # noqa: PLC0415
     from auto_pass.keepassxc import resolve_keepassxc_entry  # noqa: PLC0415
 
     _ap_env = _AUTO_PASS_ROOT / "config" / "auto-pass.env.local"
     if _ap_env.is_file():
-        load_config_environment(_ap_env)
-    result = resolve_keepassxc_entry(keepass_entry, attrs_map={"token": "password"})
-    return result.get("token", "")
+        load_config_environment(_ap_env, profile=keepass_profile)
+    last_error: KeepassCommandError | None = None
+    for candidate in _candidate_keepass_entries(keepass_entry):
+        try:
+            result = resolve_keepassxc_entry(candidate, attrs_map={"token": "password"})
+        except KeepassCommandError as exc:
+            last_error = exc
+            lowered = str(exc).lower()
+            if any(marker in lowered for marker in ENTRY_NOT_FOUND_MARKERS):
+                continue
+            raise
+        return result.get("token", "")
+    if last_error is not None:
+        raise last_error
+    return ""
 
 
 def _is_not_logged_in(error_message: str) -> bool:
@@ -377,8 +410,11 @@ class NordVPNClient:
         self,
         token: str | None = None,
         keepass_entry: str | None = None,
+        keepass_profile: str | None = DEFAULT_KEEPASS_PROFILE,
     ) -> CommandResult:
-        resolved_token = token or (_resolve_keepass_token(keepass_entry) if keepass_entry else "")
+        resolved_token = token or (
+            _resolve_keepass_token(keepass_entry, keepass_profile) if keepass_entry else ""
+        )
         if not resolved_token:
             raise ConfigurationError(
                 "NordVPN login requires a token. Provide --token or --keepass-entry."
@@ -399,6 +435,7 @@ class NordVPNClient:
         wait_seconds: float = 0,
         auto_login: bool = False,
         keepass_entry: str | None = None,
+        keepass_profile: str | None = DEFAULT_KEEPASS_PROFILE,
     ) -> CommandResult:
         command = self._build_connect_command(group)
         try:
@@ -406,7 +443,10 @@ class NordVPNClient:
         except CommandExecutionError as exc:
             if auto_login and _is_not_logged_in(str(exc)):
                 LOGGER.info("Not logged in; attempting auto-login from KeePass.")
-                self.login(keepass_entry=keepass_entry)
+                self.login(
+                    keepass_entry=keepass_entry,
+                    keepass_profile=keepass_profile,
+                )
                 result = self._execute(command, wait_seconds)
             else:
                 raise
@@ -445,6 +485,7 @@ class NordVPNClient:
         wait_seconds: float | None = None,
         auto_login: bool = False,
         keepass_entry: str | None = None,
+        keepass_profile: str | None = DEFAULT_KEEPASS_PROFILE,
         restore_wireguard: bool = False,
         wireguard_fwmark: int = 51820,
     ) -> CommandResult:
@@ -457,7 +498,10 @@ class NordVPNClient:
         except CommandExecutionError as exc:
             if auto_login and _is_not_logged_in(str(exc)):
                 LOGGER.info("Not logged in; attempting auto-login from KeePass.")
-                self.login(keepass_entry=keepass_entry)
+                self.login(
+                    keepass_entry=keepass_entry,
+                    keepass_profile=keepass_profile,
+                )
                 result = self._execute(command, wait_seconds)
             else:
                 raise
@@ -570,14 +614,19 @@ class NordVPNClient:
 
 def login_vpn_server(
     token: str | None = None,
-    keepass_entry: str | None = "Nord_VPN#access-token",
+    keepass_entry: str | None = DEFAULT_KEEPASS_ENTRY,
+    keepass_profile: str | None = DEFAULT_KEEPASS_PROFILE,
     status: bool = True,
     executable: str | None = None,
     backend: str = "auto",
 ) -> str | CommandResult:
     client = NordVPNClient(executable=executable, backend=backend)
     try:
-        result = client.login(token=token, keepass_entry=keepass_entry)
+        result = client.login(
+            token=token,
+            keepass_entry=keepass_entry,
+            keepass_profile=keepass_profile,
+        )
         return result.message if status else result
     except NordilityError as exc:
         LOGGER.error("%s\nexception in login_vpn_server", exc)

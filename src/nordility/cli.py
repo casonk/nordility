@@ -1,13 +1,59 @@
 from __future__ import annotations
 
 import argparse
+import configparser
 import logging
 import sys
+from pathlib import Path
 
-from nordility.client import NordilityError, NordVPNClient
+from nordility.client import (
+    DEFAULT_KEEPASS_ENTRY,
+    DEFAULT_KEEPASS_PROFILE,
+    NordilityError,
+    NordVPNClient,
+)
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+_AUTO_PASS_CONFIG_PATH = _REPO_ROOT / "config" / "auto-pass.ini"
+
+
+def _load_repo_auto_pass_config() -> dict[str, str]:
+    if not _AUTO_PASS_CONFIG_PATH.exists():
+        return {}
+
+    parser = configparser.ConfigParser(interpolation=None)
+    parser.optionxform = str
+    try:
+        with _AUTO_PASS_CONFIG_PATH.open(encoding="utf-8") as handle:
+            parser.read_file(handle)
+    except (OSError, configparser.Error) as exc:
+        raise NordilityError(
+            f"invalid config/auto-pass.ini: {exc}"
+        ) from exc
+
+    defaults: dict[str, str] = {}
+    if parser.has_section("auto_pass"):
+        profile = parser.get("auto_pass", "profile", fallback="").strip()
+        if profile:
+            defaults["profile"] = profile
+    if parser.has_section("nordility"):
+        keepass_entry = parser.get("nordility", "keepass_entry", fallback="").strip()
+        if keepass_entry:
+            defaults["keepass_entry"] = keepass_entry
+    return defaults
+
+
+def _resolve_keepass_defaults() -> tuple[str, str]:
+    defaults = _load_repo_auto_pass_config()
+    return (
+        defaults.get("profile") or DEFAULT_KEEPASS_PROFILE,
+        defaults.get("keepass_entry") or DEFAULT_KEEPASS_ENTRY,
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
+    keepass_profile_default, keepass_entry_default = _resolve_keepass_defaults()
+
     parser = argparse.ArgumentParser(
         description="Automate NordVPN connect/disconnect/rotation tasks."
     )
@@ -32,10 +78,18 @@ def build_parser() -> argparse.ArgumentParser:
     login_token_group.add_argument("--token", help="NordVPN access token.")
     login_token_group.add_argument(
         "--keepass-entry",
-        default="Nord_VPN#access-token",
+        default=keepass_entry_default,
         metavar="ENTRY",
         help="KeePassXC entry path whose Token attribute holds the access token. "
-        "Default: Nord_VPN#access-token",
+        f"Default: {keepass_entry_default}",
+    )
+    login_parser.add_argument(
+        "--keepass-profile",
+        default=keepass_profile_default,
+        help=(
+            "auto-pass profile to use when resolving --keepass-entry. "
+            f"Default: {keepass_profile_default}"
+        ),
     )
 
     connect_parser = subparsers.add_parser("connect", help="Connect to NordVPN.")
@@ -55,9 +109,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     connect_parser.add_argument(
         "--keepass-entry",
-        default="Nord_VPN#access-token",
+        default=keepass_entry_default,
         metavar="ENTRY",
-        help="KeePassXC entry to use for auto-login. Default: Nord_VPN#access-token",
+        help=f"KeePassXC entry to use for auto-login. Default: {keepass_entry_default}",
+    )
+    connect_parser.add_argument(
+        "--keepass-profile",
+        default=keepass_profile_default,
+        help=(
+            "auto-pass profile to use when resolving --keepass-entry. "
+            f"Default: {keepass_profile_default}"
+        ),
     )
 
     disconnect_parser = subparsers.add_parser("disconnect", help="Disconnect NordVPN.")
@@ -90,9 +152,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     change_parser.add_argument(
         "--keepass-entry",
-        default="Nord_VPN#access-token",
+        default=keepass_entry_default,
         metavar="ENTRY",
-        help="KeePassXC entry to use for auto-login. Default: Nord_VPN#access-token",
+        help=f"KeePassXC entry to use for auto-login. Default: {keepass_entry_default}",
+    )
+    change_parser.add_argument(
+        "--keepass-profile",
+        default=keepass_profile_default,
+        help=(
+            "auto-pass profile to use when resolving --keepass-entry. "
+            f"Default: {keepass_profile_default}"
+        ),
     )
     change_parser.add_argument(
         "--restore-wireguard",
@@ -140,6 +210,7 @@ def main(argv: list[str] | None = None) -> int:
             result = client.login(
                 token=args.token if args.token else None,
                 keepass_entry=args.keepass_entry if not args.token else None,
+                keepass_profile=args.keepass_profile,
             )
             print(result.message)
             return 0
@@ -149,6 +220,7 @@ def main(argv: list[str] | None = None) -> int:
                 wait_seconds=args.wait,
                 auto_login=args.auto_login,
                 keepass_entry=args.keepass_entry,
+                keepass_profile=args.keepass_profile,
             )
             print(result.message)
             return 0
@@ -163,6 +235,7 @@ def main(argv: list[str] | None = None) -> int:
                 wait_seconds=args.wait,
                 auto_login=args.auto_login,
                 keepass_entry=args.keepass_entry,
+                keepass_profile=args.keepass_profile,
                 restore_wireguard=args.restore_wireguard,
                 wireguard_fwmark=args.wireguard_fwmark,
             )
