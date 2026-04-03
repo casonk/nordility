@@ -128,6 +128,7 @@ def _resolve_keepass_token(keepass_entry: str) -> str:
         sys.path.insert(0, _src)
     from auto_pass.envfile import load_config_environment  # noqa: PLC0415
     from auto_pass.keepassxc import resolve_keepassxc_entry  # noqa: PLC0415
+
     _ap_env = _AUTO_PASS_ROOT / "config" / "auto-pass.env.local"
     if _ap_env.is_file():
         load_config_environment(_ap_env)
@@ -145,7 +146,9 @@ def _discover_wireguard_interfaces(
 ) -> list[str]:
     """Return names of active WireGuard interfaces, or [] if none or wg unavailable."""
     try:
-        result = runner(["wg", "show", "interfaces"], capture_output=True, text=True, check=False)
+        result = runner(
+            ["wg", "show", "interfaces"], capture_output=True, text=True, check=False
+        )
         if result.returncode != 0 or not result.stdout.strip():
             return []
         return result.stdout.strip().split()
@@ -161,7 +164,9 @@ def _get_wireguard_peer_endpoints(
     try:
         result = runner(
             ["wg", "show", interface, "endpoints"],
-            capture_output=True, text=True, check=False,
+            capture_output=True,
+            text=True,
+            check=False,
         )
         if result.returncode != 0:
             return {}
@@ -199,7 +204,9 @@ def _refresh_wireguard_peers(
             try:
                 runner(
                     ["wg", "set", iface, "peer", pubkey, "endpoint", endpoint],
-                    capture_output=True, text=True, check=False,
+                    capture_output=True,
+                    text=True,
+                    check=False,
                 )
                 any_set = True
             except (OSError, FileNotFoundError):
@@ -296,8 +303,11 @@ class NordVPNClient:
         )
 
     def connect(
-        self, group: str | None = None, wait_seconds: float = 0,
-        auto_login: bool = False, keepass_entry: str | None = None,
+        self,
+        group: str | None = None,
+        wait_seconds: float = 0,
+        auto_login: bool = False,
+        keepass_entry: str | None = None,
     ) -> CommandResult:
         command = self._build_connect_command(group)
         try:
@@ -364,12 +374,16 @@ class NordVPNClient:
         if restore_wireguard:
             interfaces = _discover_wireguard_interfaces(self._runner)
             if interfaces:
-                LOGGER.info("Refreshing WireGuard handshakes on: %s", ", ".join(interfaces))
+                LOGGER.info(
+                    "Refreshing WireGuard handshakes on: %s", ", ".join(interfaces)
+                )
                 refreshed = _refresh_wireguard_peers(self._runner, interfaces)
                 if refreshed:
                     wg_suffix = f"; WireGuard refreshed on {', '.join(refreshed)}"
             else:
-                LOGGER.debug("No active WireGuard interfaces discovered; skipping restore.")
+                LOGGER.debug(
+                    "No active WireGuard interfaces discovered; skipping restore."
+                )
 
         return CommandResult(
             command=result.command,
@@ -511,7 +525,9 @@ def change_vpn_server(
     try:
         wait_seconds = fast_reset if speed == "fast" else default_reset
         result = client.change(
-            speed=speed, group=group, wait_seconds=wait_seconds,
+            speed=speed,
+            group=group,
+            wait_seconds=wait_seconds,
             restore_wireguard=restore_wireguard,
         )
         return result.message if status else result

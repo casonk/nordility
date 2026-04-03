@@ -27,10 +27,10 @@ from nordility.client import (
     resolve_executable,
 )
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _cli_client(recorder: ProcessRecorder) -> NordVPNClient:
     """Return a CLI-backend NordVPNClient wired to *recorder* as its runner."""
@@ -46,16 +46,21 @@ def _cli_client(recorder: ProcessRecorder) -> NordVPNClient:
 # Subprocess / command-shape tests
 # ---------------------------------------------------------------------------
 
+
 class SubprocessPatchCliTests(unittest.TestCase):
     """Verify that NordVPNClient builds correct CLI commands and handles results."""
 
     def test_connect_with_group_issues_space_separated_cli_arg(self) -> None:
         recorder = ProcessRecorder(default_stdout="You are connected to United States")
         with SubprocessPatch(recorder):
-            result = _cli_client(recorder).connect(group="United_States", wait_seconds=0)
+            result = _cli_client(recorder).connect(
+                group="United_States", wait_seconds=0
+            )
 
         self.assertEqual(recorder.call_count, 1)
-        self.assertEqual(recorder.calls[0].args, ("nordvpn", "connect", "United States"))
+        self.assertEqual(
+            recorder.calls[0].args, ("nordvpn", "connect", "United States")
+        )
         self.assertEqual(result.message, "VPN Connected to United_States")
         self.assertEqual(result.group, "United_States")
 
@@ -126,16 +131,21 @@ class SubprocessPatchCliTests(unittest.TestCase):
 # EnvPatch tests — environment-driven configuration
 # ---------------------------------------------------------------------------
 
+
 class EnvPatchNordilityTests(unittest.TestCase):
     """Verify env-var-driven executable and backend resolution."""
 
     def test_nordility_executable_env_takes_priority(self) -> None:
-        with EnvPatch({"NORDILITY_EXECUTABLE": "/opt/custom/nordvpn", "NORDVPN_EXECUTABLE": ""}):
+        with EnvPatch(
+            {"NORDILITY_EXECUTABLE": "/opt/custom/nordvpn", "NORDVPN_EXECUTABLE": ""}
+        ):
             exe = resolve_executable(None)
         self.assertEqual(exe, "/opt/custom/nordvpn")
 
     def test_nordvpn_executable_env_used_as_fallback(self) -> None:
-        with EnvPatch({"NORDILITY_EXECUTABLE": "", "NORDVPN_EXECUTABLE": "/usr/bin/nordvpn"}):
+        with EnvPatch(
+            {"NORDILITY_EXECUTABLE": "", "NORDVPN_EXECUTABLE": "/usr/bin/nordvpn"}
+        ):
             exe = resolve_executable(None)
         self.assertEqual(exe, "/usr/bin/nordvpn")
 
