@@ -14,7 +14,6 @@ Pattern used for subprocess mocking:
 from __future__ import annotations
 
 import unittest
-from subprocess import CompletedProcess
 
 from dyno_lab.env import EnvPatch
 from dyno_lab.proc import ProcessRecorder, SubprocessPatch, build_completed_process
@@ -53,14 +52,10 @@ class SubprocessPatchCliTests(unittest.TestCase):
     def test_connect_with_group_issues_space_separated_cli_arg(self) -> None:
         recorder = ProcessRecorder(default_stdout="You are connected to United States")
         with SubprocessPatch(recorder):
-            result = _cli_client(recorder).connect(
-                group="United_States", wait_seconds=0
-            )
+            result = _cli_client(recorder).connect(group="United_States", wait_seconds=0)
 
         self.assertEqual(recorder.call_count, 1)
-        self.assertEqual(
-            recorder.calls[0].args, ("nordvpn", "connect", "United States")
-        )
+        self.assertEqual(recorder.calls[0].args, ("nordvpn", "connect", "United States"))
         self.assertEqual(result.message, "VPN Connected to United_States")
         self.assertEqual(result.group, "United_States")
 
@@ -79,9 +74,8 @@ class SubprocessPatchCliTests(unittest.TestCase):
                 build_completed_process(returncode=1, stderr="daemon not running"),
             ]
         )
-        with SubprocessPatch(recorder):
-            with self.assertRaises(CommandExecutionError) as ctx:
-                _cli_client(recorder).connect(wait_seconds=0)
+        with SubprocessPatch(recorder), self.assertRaises(CommandExecutionError) as ctx:
+            _cli_client(recorder).connect(wait_seconds=0)
 
         self.assertIn("daemon not running", str(ctx.exception))
 
@@ -136,16 +130,12 @@ class EnvPatchNordilityTests(unittest.TestCase):
     """Verify env-var-driven executable and backend resolution."""
 
     def test_nordility_executable_env_takes_priority(self) -> None:
-        with EnvPatch(
-            {"NORDILITY_EXECUTABLE": "/opt/custom/nordvpn", "NORDVPN_EXECUTABLE": ""}
-        ):
+        with EnvPatch({"NORDILITY_EXECUTABLE": "/opt/custom/nordvpn", "NORDVPN_EXECUTABLE": ""}):
             exe = resolve_executable(None)
         self.assertEqual(exe, "/opt/custom/nordvpn")
 
     def test_nordvpn_executable_env_used_as_fallback(self) -> None:
-        with EnvPatch(
-            {"NORDILITY_EXECUTABLE": "", "NORDVPN_EXECUTABLE": "/usr/bin/nordvpn"}
-        ):
+        with EnvPatch({"NORDILITY_EXECUTABLE": "", "NORDVPN_EXECUTABLE": "/usr/bin/nordvpn"}):
             exe = resolve_executable(None)
         self.assertEqual(exe, "/usr/bin/nordvpn")
 
@@ -156,17 +146,17 @@ class EnvPatchNordilityTests(unittest.TestCase):
 
     def test_nordility_backend_env_forces_cli_on_client(self) -> None:
         recorder = ProcessRecorder(default_stdout="connected")
-        with EnvPatch({"NORDILITY_BACKEND": "cli"}):
-            with SubprocessPatch(recorder):
-                client = NordVPNClient(
-                    executable="nordvpn",
-                    runner=recorder,
-                    sleeper=lambda _: None,
-                )
+        with EnvPatch({"NORDILITY_BACKEND": "cli"}), SubprocessPatch(recorder):
+            client = NordVPNClient(
+                executable="nordvpn",
+                runner=recorder,
+                sleeper=lambda _: None,
+            )
         self.assertEqual(client.backend, "cli")
 
     def test_connect_vpn_server_returns_message_string_on_success(self) -> None:
         from unittest.mock import patch as _patch
+
         from nordility.client import CommandResult
 
         mock_result = CommandResult(
@@ -183,6 +173,7 @@ class EnvPatchNordilityTests(unittest.TestCase):
 
     def test_disconnect_vpn_server_returns_message_string_on_success(self) -> None:
         from unittest.mock import patch as _patch
+
         from nordility.client import CommandResult
 
         mock_result = CommandResult(
