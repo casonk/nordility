@@ -119,8 +119,8 @@ _AUTO_PASS_ROOT = Path(__file__).resolve().parent.parent.parent.parent / "auto-p
 def _resolve_keepass_token(keepass_entry: str) -> str:
     """Resolve the NordVPN access token from a KeePassXC entry via auto-pass.
 
-    Reads the custom ``Token`` attribute of the entry. Falls back to the
-    ``Password`` field if no ``Token`` attribute is present.
+    Reads the ``Password`` field of the entry. By default the entry is
+    ``Nord_VPN#access-token``.
     """
     _src = str(_AUTO_PASS_ROOT / "src")
     if _src not in sys.path:
@@ -130,7 +130,7 @@ def _resolve_keepass_token(keepass_entry: str) -> str:
     _ap_env = _AUTO_PASS_ROOT / "config" / "auto-pass.env.local"
     if _ap_env.is_file():
         load_config_environment(_ap_env)
-    result = resolve_keepassxc_entry(keepass_entry, attrs_map={"token": "Token"})
+    result = resolve_keepassxc_entry(keepass_entry, attrs_map={"token": "password"})
     return result.get("token", "")
 
 
@@ -362,7 +362,7 @@ class NordVPNClient:
 
 def login_vpn_server(
     token: str | None = None,
-    keepass_entry: str | None = "Nord_VPN",
+    keepass_entry: str | None = "Nord_VPN#access-token",
     status: bool = True,
     executable: str | None = None,
     backend: str = "auto",
