@@ -29,6 +29,17 @@ def build_parser() -> argparse.ArgumentParser:
 
     subparsers = parser.add_subparsers(dest="command", required=True)
 
+    login_parser = subparsers.add_parser("login", help="Log in to NordVPN using a token.")
+    login_token_group = login_parser.add_mutually_exclusive_group()
+    login_token_group.add_argument("--token", help="NordVPN access token.")
+    login_token_group.add_argument(
+        "--keepass-entry",
+        default="Nord_VPN",
+        metavar="ENTRY",
+        help="KeePassXC entry path whose Token attribute holds the access token. "
+             "Default: Nord_VPN",
+    )
+
     connect_parser = subparsers.add_parser("connect", help="Connect to NordVPN.")
     connect_parser.add_argument(
         "--group", help="Country or server group name, for example United_States."
@@ -38,6 +49,17 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
         default=0,
         help="Seconds to sleep after launching the command.",
+    )
+    connect_parser.add_argument(
+        "--auto-login",
+        action="store_true",
+        help="If the client is logged out, re-authenticate via KeePass before connecting.",
+    )
+    connect_parser.add_argument(
+        "--keepass-entry",
+        default="Nord_VPN",
+        metavar="ENTRY",
+        help="KeePassXC entry to use for auto-login. Default: Nord_VPN",
     )
 
     disconnect_parser = subparsers.add_parser("disconnect", help="Disconnect NordVPN.")
@@ -63,6 +85,17 @@ def build_parser() -> argparse.ArgumentParser:
         type=float,
         help="Seconds to sleep after launching the command. Defaults to 10 for fast or 30 for full.",
     )
+    change_parser.add_argument(
+        "--auto-login",
+        action="store_true",
+        help="If the client is logged out, re-authenticate via KeePass before connecting.",
+    )
+    change_parser.add_argument(
+        "--keepass-entry",
+        default="Nord_VPN",
+        metavar="ENTRY",
+        help="KeePassXC entry to use for auto-login. Default: Nord_VPN",
+    )
 
     list_parser = subparsers.add_parser(
         "list-groups", help="List built-in server groups."
@@ -85,8 +118,20 @@ def main(argv: list[str] | None = None) -> int:
     client = NordVPNClient(executable=args.executable, backend=args.backend)
 
     try:
+        if args.command == "login":
+            result = client.login(
+                token=args.token if args.token else None,
+                keepass_entry=args.keepass_entry if not args.token else None,
+            )
+            print(result.message)
+            return 0
         if args.command == "connect":
-            result = client.connect(group=args.group, wait_seconds=args.wait)
+            result = client.connect(
+                group=args.group,
+                wait_seconds=args.wait,
+                auto_login=args.auto_login,
+                keepass_entry=args.keepass_entry,
+            )
             print(result.message)
             return 0
         if args.command == "disconnect":
@@ -95,7 +140,11 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.command == "change":
             result = client.change(
-                speed=args.speed, group=args.group, wait_seconds=args.wait
+                speed=args.speed,
+                group=args.group,
+                wait_seconds=args.wait,
+                auto_login=args.auto_login,
+                keepass_entry=args.keepass_entry,
             )
             print(result.message)
             return 0

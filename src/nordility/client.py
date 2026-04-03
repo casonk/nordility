@@ -4,8 +4,10 @@ import logging
 import os
 import random
 import subprocess
+import sys
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Callable
 
 LOGGER = logging.getLogger("nordility")
@@ -105,6 +107,37 @@ GROUPS_BY_SPEED = {
     "full": FULL_GROUPS,
 }
 
+NOT_LOGGED_IN_MARKERS = (
+    "not logged in",
+    "please log in",
+    "you are not logged in",
+)
+
+_AUTO_PASS_ROOT = Path(__file__).resolve().parent.parent.parent.parent / "auto-pass"
+
+
+def _resolve_keepass_token(keepass_entry: str) -> str:
+    """Resolve the NordVPN access token from a KeePassXC entry via auto-pass.
+
+    Reads the custom ``Token`` attribute of the entry. Falls back to the
+    ``Password`` field if no ``Token`` attribute is present.
+    """
+    _src = str(_AUTO_PASS_ROOT / "src")
+    if _src not in sys.path:
+        sys.path.insert(0, _src)
+    from auto_pass.envfile import load_config_environment  # noqa: PLC0415
+    from auto_pass.keepassxc import resolve_keepassxc_entry  # noqa: PLC0415
+    _ap_env = _AUTO_PASS_ROOT / "config" / "auto-pass.env.local"
+    if _ap_env.is_file():
+        load_config_environment(_ap_env)
+    result = resolve_keepassxc_entry(keepass_entry, attrs_map={"token": "Token"})
+    return result.get("token", "")
+
+
+def _is_not_logged_in(error_message: str) -> bool:
+    lowered = error_message.lower()
+    return any(marker in lowered for marker in NOT_LOGGED_IN_MARKERS)
+
 
 class NordilityError(RuntimeError):
     pass
@@ -169,11 +202,42 @@ class NordVPNClient:
         self._sleeper = sleeper
         self._rng = rng or random.Random()
 
+    def login(
+        self,
+        token: str | None = None,
+        keepass_entry: str | None = None,
+    ) -> CommandResult:
+        resolved_token = token or (
+            _resolve_keepass_token(keepass_entry) if keepass_entry else ""
+        )
+        if not resolved_token:
+            raise ConfigurationError(
+                "NordVPN login requires a token. Provide --token or --keepass-entry."
+            )
+        command = self._build_login_command(resolved_token)
+        result = self._execute(command, 0)
+        return CommandResult(
+            command=result.command,
+            message="NordVPN Logged In",
+            returncode=result.returncode,
+            stdout=result.stdout,
+            stderr=result.stderr,
+        )
+
     def connect(
-        self, group: str | None = None, wait_seconds: float = 0
+        self, group: str | None = None, wait_seconds: float = 0,
+        auto_login: bool = False, keepass_entry: str | None = None,
     ) -> CommandResult:
         command = self._build_connect_command(group)
-        result = self._execute(command, wait_seconds)
+        try:
+            result = self._execute(command, wait_seconds)
+        except CommandExecutionError as exc:
+            if auto_login and _is_not_logged_in(str(exc)):
+                LOGGER.info("Not logged in; attempting auto-login from KeePass.")
+                self.login(keepass_entry=keepass_entry)
+                result = self._execute(command, wait_seconds)
+            else:
+                raise
         if group:
             return CommandResult(
                 command=result.command,
@@ -207,12 +271,22 @@ class NordVPNClient:
         speed: str = "fast",
         group: str | None = None,
         wait_seconds: float | None = None,
+        auto_login: bool = False,
+        keepass_entry: str | None = None,
     ) -> CommandResult:
         chosen_group = group or self.pick_group(speed)
         if wait_seconds is None:
             wait_seconds = 10 if speed == "fast" else 30
         command = self._build_connect_command(chosen_group)
-        result = self._execute(command, wait_seconds)
+        try:
+            result = self._execute(command, wait_seconds)
+        except CommandExecutionError as exc:
+            if auto_login and _is_not_logged_in(str(exc)):
+                LOGGER.info("Not logged in; attempting auto-login from KeePass.")
+                self.login(keepass_entry=keepass_entry)
+                result = self._execute(command, wait_seconds)
+            else:
+                raise
         return CommandResult(
             command=result.command,
             message=f"VPN Connection Successfully Redirected to {chosen_group}",
@@ -242,6 +316,9 @@ class NordVPNClient:
         if self.backend == "windows":
             return (self.executable, "-d")
         return (self.executable, "disconnect")
+
+    def _build_login_command(self, token: str) -> tuple[str, ...]:
+        return (self.executable, "login", "--token", token)
 
     def _execute(self, command: tuple[str, ...], wait_seconds: float) -> CommandResult:
         LOGGER.info("Running NordVPN command: %s", " ".join(command))
@@ -281,6 +358,24 @@ class NordVPNClient:
         if normalized not in GROUPS_BY_SPEED:
             raise ConfigurationError(f"Unsupported speed: {speed}")
         return normalized
+
+
+def login_vpn_server(
+    token: str | None = None,
+    keepass_entry: str | None = "Nord_VPN",
+    status: bool = True,
+    executable: str | None = None,
+    backend: str = "auto",
+) -> str | CommandResult:
+    client = NordVPNClient(executable=executable, backend=backend)
+    try:
+        result = client.login(token=token, keepass_entry=keepass_entry)
+        return result.message if status else result
+    except NordilityError as exc:
+        LOGGER.error("%s\nexception in login_vpn_server", exc)
+        if status:
+            return "NordVPN Login Failed"
+        raise
 
 
 def connect_vpn_server(
