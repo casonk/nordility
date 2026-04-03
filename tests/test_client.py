@@ -477,11 +477,53 @@ class WireGuardRoutingRestoreTests(unittest.TestCase):
             rng=random.Random(1),
         )
 
-        result = client.change(restore_wireguard=True, wireguard_fwmark=51820)
+        with mock.patch("nordility.client.Path") as mock_path:
+            mock_path.return_value.exists.return_value = True
+            result = client.change(restore_wireguard=True, wireguard_fwmark=51820)
 
         self.assertIn("WireGuard refreshed on wg0", result.message)
         self.assertIn("routing restored on wg0", result.message)
         self.assertIn(("wg", "set", "wg0", "fwmark", "51820"), calls)
+
+    def test_change_cli_skips_routing_for_vpn_managed_interfaces(self) -> None:
+        """nordlynx and other VPN-managed interfaces without /etc/wireguard/<iface>.conf
+        must not have their fwmark overwritten."""
+        calls: list[tuple] = []
+        wg_responses = {
+            ("wg", "show", "interfaces"): CompletedProcess(
+                [], 0, stdout="wg0 nordlynx\n", stderr=""
+            ),
+            ("wg", "show", "wg0", "endpoints"): CompletedProcess(
+                [], 0, stdout="PUBKEY\t10.0.0.1:51820\n", stderr=""
+            ),
+            ("wg", "show", "nordlynx", "endpoints"): CompletedProcess(
+                [], 0, stdout="PUBKEY2\t1.2.3.4:51820\n", stderr=""
+            ),
+            ("ip", "rule", "show"): CompletedProcess([], 0, stdout="", stderr=""),
+        }
+
+        def fake_runner(command, capture_output, text, check):
+            calls.append(tuple(command))
+            return wg_responses.get(tuple(command), CompletedProcess(command, 0, stdout="ok", stderr=""))
+
+        client = NordVPNClient(
+            executable="nordvpn",
+            backend="cli",
+            runner=fake_runner,
+            sleeper=lambda _: None,
+            rng=random.Random(1),
+        )
+
+        def path_exists(path_str):
+            # only wg0 has a config file; nordlynx does not
+            return "wg0" in str(path_str)
+
+        with mock.patch("nordility.client.Path") as mock_path:
+            mock_path.side_effect = lambda p: mock.MagicMock(exists=lambda: path_exists(p))
+            client.change(restore_wireguard=True, wireguard_fwmark=51820)
+
+        nordlynx_fwmark = ("wg", "set", "nordlynx", "fwmark", "51820")
+        self.assertNotIn(nordlynx_fwmark, calls)
 
     def test_change_windows_backend_skips_routing_restore(self) -> None:
         calls: list[tuple] = []
