@@ -34,10 +34,10 @@ def build_parser() -> argparse.ArgumentParser:
     login_token_group.add_argument("--token", help="NordVPN access token.")
     login_token_group.add_argument(
         "--keepass-entry",
-        default="Nord_VPN",
+        default="Nord_VPN#access-token",
         metavar="ENTRY",
         help="KeePassXC entry path whose Token attribute holds the access token. "
-             "Default: Nord_VPN",
+             "Default: Nord_VPN#access-token",
     )
 
     connect_parser = subparsers.add_parser("connect", help="Connect to NordVPN.")
@@ -57,9 +57,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     connect_parser.add_argument(
         "--keepass-entry",
-        default="Nord_VPN",
+        default="Nord_VPN#access-token",
         metavar="ENTRY",
-        help="KeePassXC entry to use for auto-login. Default: Nord_VPN",
+        help="KeePassXC entry to use for auto-login. Default: Nord_VPN#access-token",
     )
 
     disconnect_parser = subparsers.add_parser("disconnect", help="Disconnect NordVPN.")
@@ -92,9 +92,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     change_parser.add_argument(
         "--keepass-entry",
-        default="Nord_VPN",
+        default="Nord_VPN#access-token",
         metavar="ENTRY",
-        help="KeePassXC entry to use for auto-login. Default: Nord_VPN",
+        help="KeePassXC entry to use for auto-login. Default: Nord_VPN#access-token",
     )
 
     list_parser = subparsers.add_parser(
