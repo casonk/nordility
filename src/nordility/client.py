@@ -160,14 +160,17 @@ def _get_wireguard_peer_endpoints(
     runner: Callable[..., subprocess.CompletedProcess[str]],
     interface: str,
 ) -> dict[str, str]:
-    """Return {pubkey: endpoint} for peers that have a known endpoint on *interface*."""
+    """Return {pubkey: endpoint} for peers that have a known endpoint on *interface*.
+
+    Tries ``wg show`` without privilege first; retries with ``sudo -n`` if
+    the call returns non-zero (``wg show <iface> endpoints`` requires root on
+    most Linux systems).
+    """
+    cmd = ["wg", "show", interface, "endpoints"]
     try:
-        result = runner(
-            ["wg", "show", interface, "endpoints"],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
+        result = runner(cmd, capture_output=True, text=True, check=False)
+        if result.returncode != 0:
+            result = runner(["sudo", "-n"] + cmd, capture_output=True, text=True, check=False)
         if result.returncode != 0:
             return {}
         peers: dict[str, str] = {}
