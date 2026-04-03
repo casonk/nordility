@@ -96,3 +96,22 @@ class CLITests(TestCase):
         mock_client.connect.assert_called_once_with(
             group=None, wait_seconds=0, auto_login=True, keepass_entry="Nord_VPN#access-token"
         )
+
+    @mock.patch("nordility.cli.NordVPNClient")
+    def test_restore_wireguard_flag_passed_to_change(self, mock_client_cls) -> None:
+        mock_client = mock_client_cls.return_value
+        mock_client.change.return_value = CommandResult(
+            command=("nordvpn", "connect", "Germany"),
+            message="VPN Connection Successfully Redirected to Germany; WireGuard refreshed on wg0",
+            group="Germany",
+            returncode=0,
+        )
+
+        stdout = io.StringIO()
+        with mock.patch("sys.stdout", new=stdout):
+            exit_code = main(["change", "--restore-wireguard"])
+
+        self.assertEqual(exit_code, 0)
+        call_kwargs = mock_client.change.call_args
+        self.assertTrue(call_kwargs.kwargs.get("restore_wireguard"))
+        self.assertIn("WireGuard refreshed", stdout.getvalue())
