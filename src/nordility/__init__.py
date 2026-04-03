@@ -6,6 +6,7 @@ from nordility.client import (
     change_vpn_server,
     connect_vpn_server,
     disconnect_vpn_server,
+    login_vpn_server,
 )
 
 __all__ = [
@@ -16,4 +17,5 @@ __all__ = [
     "change_vpn_server",
     "connect_vpn_server",
     "disconnect_vpn_server",
+    "login_vpn_server",
 ]
