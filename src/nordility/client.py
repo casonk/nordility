@@ -191,8 +191,17 @@ def _refresh_wireguard_peers(
     of waiting for the next keepalive interval.
 
     Returns the list of interface names where at least one peer was refreshed.
-    Requires the process to have permission to run ``wg set`` (typically root
-    or the ``wireguard`` group).
+    ``wg set`` requires root on Linux. nordility tries ``sudo -n wg set``
+    (non-interactive sudo) so the command works automatically when the
+    following sudoers rule is present::
+
+        <user>  ALL=(ALL) NOPASSWD: /usr/bin/wg set *
+
+    Without that rule the refresh is silently skipped — add it with::
+
+        echo "$USER  ALL=(ALL) NOPASSWD: $(which wg) set *" \\
+            | sudo tee /etc/sudoers.d/nordility-wg
+        sudo chmod 440 /etc/sudoers.d/nordility-wg
     """
     refreshed: list[str] = []
     for iface in interfaces:
@@ -201,14 +210,17 @@ def _refresh_wireguard_peers(
             continue
         any_set = False
         for pubkey, endpoint in peers.items():
+            cmd = ["wg", "set", iface, "peer", pubkey, "endpoint", endpoint]
             try:
-                runner(
-                    ["wg", "set", iface, "peer", pubkey, "endpoint", endpoint],
-                    capture_output=True,
-                    text=True,
-                    check=False,
-                )
-                any_set = True
+                result = runner(cmd, capture_output=True, text=True, check=False)
+                if result.returncode != 0:
+                    # Retry with sudo -n (non-interactive; no-op if no sudoers rule).
+                    result = runner(
+                        ["sudo", "-n"] + cmd,
+                        capture_output=True, text=True, check=False,
+                    )
+                if result.returncode == 0:
+                    any_set = True
             except (OSError, FileNotFoundError):
                 pass
         if any_set:
