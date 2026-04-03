@@ -466,12 +466,26 @@ class NordVPNClient:
                 if refreshed:
                     wg_suffix = f"; WireGuard refreshed on {', '.join(refreshed)}"
                 if self.backend == "cli":
-                    LOGGER.info("Restoring WireGuard routing on: %s", ", ".join(interfaces))
-                    routing_restored = _restore_wireguard_routing(
-                        self._runner, interfaces, fwmark=wireguard_fwmark
-                    )
-                    if routing_restored:
-                        wg_suffix += f"; routing restored on {', '.join(routing_restored)}"
+                    # Only restore routing for interfaces that have a config
+                    # file in /etc/wireguard/.  This excludes VPN-managed
+                    # interfaces such as NordVPN's 'nordlynx' (which has no
+                    # /etc/wireguard/nordlynx.conf) so we don't overwrite
+                    # their internal fwmark and break their own routing.
+                    routing_candidates = [
+                        i for i in interfaces
+                        if Path(f"/etc/wireguard/{i}.conf").exists()
+                    ]
+                    if routing_candidates:
+                        LOGGER.info(
+                            "Restoring WireGuard routing on: %s", ", ".join(routing_candidates)
+                        )
+                        routing_restored = _restore_wireguard_routing(
+                            self._runner, routing_candidates, fwmark=wireguard_fwmark
+                        )
+                        if routing_restored:
+                            wg_suffix += f"; routing restored on {', '.join(routing_restored)}"
+                    else:
+                        LOGGER.debug("No user-managed WireGuard interfaces found; skipping routing restore.")
             else:
                 LOGGER.debug("No active WireGuard interfaces discovered; skipping restore.")
 
