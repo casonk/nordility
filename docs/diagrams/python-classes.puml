@@ -1,8 +1,8 @@
 @startuml classes_nordility
 set namespaceSeparator none
-class "<color:red>CommandExecutionError</color>" as nordility.client.CommandExecutionError {
+class "<color:red>CommandExecutionError</color>" as src.nordility.client.CommandExecutionError {
 }
-class "CommandResult" as nordility.client.CommandResult {
+class "CommandResult" as src.nordility.client.CommandResult {
   command : tuple[str, ...]
   group : str | None
   message : str
@@ -10,19 +10,20 @@ class "CommandResult" as nordility.client.CommandResult {
   stderr : str
   stdout : str
 }
-class "<color:red>ConfigurationError</color>" as nordility.client.ConfigurationError {
+class "<color:red>ConfigurationError</color>" as src.nordility.client.ConfigurationError {
 }
-class "NordVPNClient" as nordility.client.NordVPNClient {
+class "NordVPNClient" as src.nordility.client.NordVPNClient {
   backend : str
   executable
-  change(speed: str, group: str | None, wait_seconds: float | None) -> CommandResult
-  connect(group: str | None, wait_seconds: float) -> CommandResult
+  change(speed: str, group: str | None, wait_seconds: float | None, auto_login: bool, keepass_entry: str | None, keepass_profile: str | None, restore_wireguard: bool, wireguard_fwmark: int) -> CommandResult
+  connect(group: str | None, wait_seconds: float, auto_login: bool, keepass_entry: str | None, keepass_profile: str | None) -> CommandResult
   disconnect(wait_seconds: float) -> CommandResult
   list_groups(speed: str) -> tuple[str, ...]
+  login(token: str | None, keepass_entry: str | None, keepass_profile: str | None) -> CommandResult
   pick_group(speed: str) -> str
 }
-class "<color:red>NordilityError</color>" as nordility.client.NordilityError {
+class "<color:red>NordilityError</color>" as src.nordility.client.NordilityError {
 }
-nordility.client.CommandExecutionError --|> nordility.client.NordilityError
-nordility.client.ConfigurationError --|> nordility.client.NordilityError
+src.nordility.client.CommandExecutionError --|> src.nordility.client.NordilityError
+src.nordility.client.ConfigurationError --|> src.nordility.client.NordilityError
 @enduml
