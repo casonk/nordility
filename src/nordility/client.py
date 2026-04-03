@@ -7,9 +7,9 @@ import shutil
 import subprocess
 import sys
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
 
 LOGGER = logging.getLogger("nordility")
 
@@ -146,9 +146,7 @@ def _discover_wireguard_interfaces(
 ) -> list[str]:
     """Return names of active WireGuard interfaces, or [] if none or wg unavailable."""
     try:
-        result = runner(
-            ["wg", "show", "interfaces"], capture_output=True, text=True, check=False
-        )
+        result = runner(["wg", "show", "interfaces"], capture_output=True, text=True, check=False)
         if result.returncode != 0 or not result.stdout.strip():
             return []
         return result.stdout.strip().split()
@@ -170,9 +168,7 @@ def _get_wireguard_peer_endpoints(
     try:
         result = runner(cmd, capture_output=True, text=True, check=False)
         if result.returncode != 0:
-            result = runner(
-                ["sudo", "-n"] + cmd, capture_output=True, text=True, check=False
-            )
+            result = runner(["sudo", "-n"] + cmd, capture_output=True, text=True, check=False)
         if result.returncode != 0:
             return {}
         peers: dict[str, str] = {}
@@ -304,9 +300,7 @@ class NordVPNClient:
         token: str | None = None,
         keepass_entry: str | None = None,
     ) -> CommandResult:
-        resolved_token = token or (
-            _resolve_keepass_token(keepass_entry) if keepass_entry else ""
-        )
+        resolved_token = token or (_resolve_keepass_token(keepass_entry) if keepass_entry else "")
         if not resolved_token:
             raise ConfigurationError(
                 "NordVPN login requires a token. Provide --token or --keepass-entry."
@@ -393,16 +387,12 @@ class NordVPNClient:
         if restore_wireguard:
             interfaces = _discover_wireguard_interfaces(self._runner)
             if interfaces:
-                LOGGER.info(
-                    "Refreshing WireGuard handshakes on: %s", ", ".join(interfaces)
-                )
+                LOGGER.info("Refreshing WireGuard handshakes on: %s", ", ".join(interfaces))
                 refreshed = _refresh_wireguard_peers(self._runner, interfaces)
                 if refreshed:
                     wg_suffix = f"; WireGuard refreshed on {', '.join(refreshed)}"
             else:
-                LOGGER.debug(
-                    "No active WireGuard interfaces discovered; skipping restore."
-                )
+                LOGGER.debug("No active WireGuard interfaces discovered; skipping restore.")
 
         return CommandResult(
             command=result.command,

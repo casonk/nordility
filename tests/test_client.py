@@ -4,9 +4,8 @@ from subprocess import CompletedProcess
 from unittest import mock
 
 from nordility.client import (
-    CommandExecutionError,
-    ConfigurationError,
     FAST_GROUPS,
+    ConfigurationError,
     NordVPNClient,
     _discover_wireguard_interfaces,
     _get_wireguard_peer_endpoints,
@@ -19,9 +18,7 @@ from nordility.client import (
 
 class NordVPNClientTests(unittest.TestCase):
     def test_resolve_backend_auto_detects_windows(self) -> None:
-        self.assertEqual(
-            resolve_backend("C:/Program Files/NordVPN/NordVPN.exe", "auto"), "windows"
-        )
+        self.assertEqual(resolve_backend("C:/Program Files/NordVPN/NordVPN.exe", "auto"), "windows")
 
     def test_resolve_backend_auto_detects_cli(self) -> None:
         self.assertEqual(resolve_backend("nordvpn", "auto"), "cli")
@@ -31,11 +28,11 @@ class NordVPNClientTests(unittest.TestCase):
             resolve_backend("nordvpn", "bad-backend")
 
     def test_resolve_executable_uses_which_on_linux(self) -> None:
-        with mock.patch(
-            "nordility.client.shutil.which", return_value="/usr/bin/nordvpn"
+        with (
+            mock.patch("nordility.client.shutil.which", return_value="/usr/bin/nordvpn"),
+            mock.patch.dict("os.environ", {}, clear=True),
         ):
-            with mock.patch.dict("os.environ", {}, clear=True):
-                result = resolve_executable(None)
+            result = resolve_executable(None)
         self.assertEqual(result, "/usr/bin/nordvpn")
 
     def test_resolve_executable_falls_back_to_windows_path_when_not_found(self) -> None:
@@ -157,9 +154,7 @@ class NordVPNClientTests(unittest.TestCase):
         )
 
         with mock.patch("nordility.client._resolve_keepass_token", return_value="tok"):
-            result = client.connect(
-                auto_login=True, keepass_entry="Nord_VPN#access-token"
-            )
+            result = client.connect(auto_login=True, keepass_entry="Nord_VPN#access-token")
 
         self.assertEqual(calls[0], ("nordvpn", "connect"))
         self.assertEqual(calls[1], ("nordvpn", "login", "--token", "tok"))
@@ -192,9 +187,7 @@ class WireGuardRestoreTests(unittest.TestCase):
     def test_discover_returns_empty_when_no_interfaces(self) -> None:
         runner = self._make_runner(
             {
-                ("wg", "show", "interfaces"): CompletedProcess(
-                    [], 0, stdout="", stderr=""
-                ),
+                ("wg", "show", "interfaces"): CompletedProcess([], 0, stdout="", stderr=""),
             }
         )
         self.assertEqual(_discover_wireguard_interfaces(runner), [])
@@ -233,9 +226,7 @@ class WireGuardRestoreTests(unittest.TestCase):
 
         def runner(command, capture_output, text, check):
             calls.append(tuple(command))
-            return responses.get(
-                tuple(command), CompletedProcess(command, 0, stdout="", stderr="")
-            )
+            return responses.get(tuple(command), CompletedProcess(command, 0, stdout="", stderr=""))
 
         result = _get_wireguard_peer_endpoints(runner, "wg0")
 
@@ -245,9 +236,7 @@ class WireGuardRestoreTests(unittest.TestCase):
     def test_refresh_peers_retries_with_sudo_on_permission_failure(self) -> None:
         real_calls: list[tuple] = []
         responses = {
-            ("wg", "show", "interfaces"): CompletedProcess(
-                [], 0, stdout="wg0\n", stderr=""
-            ),
+            ("wg", "show", "interfaces"): CompletedProcess([], 0, stdout="wg0\n", stderr=""),
             ("wg", "show", "wg0", "endpoints"): CompletedProcess(
                 [], 0, stdout="PUBKEY\t203.0.113.1:51820\n", stderr=""
             ),
@@ -277,9 +266,7 @@ class WireGuardRestoreTests(unittest.TestCase):
 
         def runner(command, capture_output, text, check):
             real_calls.append(tuple(command))
-            return responses.get(
-                tuple(command), CompletedProcess(command, 0, stdout="", stderr="")
-            )
+            return responses.get(tuple(command), CompletedProcess(command, 0, stdout="", stderr=""))
 
         interfaces = _discover_wireguard_interfaces(runner)
         refreshed = _refresh_wireguard_peers(runner, interfaces)
@@ -308,9 +295,7 @@ class WireGuardRestoreTests(unittest.TestCase):
         # Pre-populate: wg show interfaces → wg0, wg show wg0 endpoints → one peer
         real_calls: list[tuple] = []
         responses = {
-            ("wg", "show", "interfaces"): CompletedProcess(
-                [], 0, stdout="wg0\n", stderr=""
-            ),
+            ("wg", "show", "interfaces"): CompletedProcess([], 0, stdout="wg0\n", stderr=""),
             ("wg", "show", "wg0", "endpoints"): CompletedProcess(
                 [], 0, stdout="PUBKEY\t203.0.113.1:51820\n", stderr=""
             ),
@@ -319,9 +304,7 @@ class WireGuardRestoreTests(unittest.TestCase):
         def runner(command, capture_output, text, check):
             real_calls.append(tuple(command))
             key = tuple(command)
-            return responses.get(
-                key, CompletedProcess(command, 0, stdout="", stderr="")
-            )
+            return responses.get(key, CompletedProcess(command, 0, stdout="", stderr=""))
 
         interfaces = _discover_wireguard_interfaces(runner)
         refreshed = _refresh_wireguard_peers(runner, interfaces)
@@ -334,9 +317,7 @@ class WireGuardRestoreTests(unittest.TestCase):
 
     def test_change_with_restore_wireguard_refreshes_peers(self) -> None:
         wg_responses = {
-            ("wg", "show", "interfaces"): CompletedProcess(
-                [], 0, stdout="wg0\n", stderr=""
-            ),
+            ("wg", "show", "interfaces"): CompletedProcess([], 0, stdout="wg0\n", stderr=""),
             ("wg", "show", "wg0", "endpoints"): CompletedProcess(
                 [], 0, stdout="PUBKEY\t10.0.0.1:51820\n", stderr=""
             ),
