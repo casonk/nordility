@@ -1,7 +1,5 @@
 import io
-import sys
-from unittest import mock
-from unittest import TestCase
+from unittest import TestCase, mock
 
 from nordility.cli import main
 from nordility.client import CommandResult, NordilityError
@@ -83,9 +81,7 @@ class CLITests(TestCase):
 
         main(["login"])
 
-        mock_client.login.assert_called_once_with(
-            token=None, keepass_entry="Nord_VPN#access-token"
-        )
+        mock_client.login.assert_called_once_with(token=None, keepass_entry="Nord_VPN#access-token")
 
     @mock.patch("nordility.cli.NordVPNClient")
     def test_connect_passes_auto_login_flag(self, mock_client_cls) -> None:
