@@ -1,0 +1,13 @@
+# Known downstream repositories for nordility.
+# Paths are relative to the portfolio root.
+# Track explicit code/config/operational integrations here, not generic
+# shared-utility mentions from AGENTS.md alone.
+
+[utility_repo]
+path = "./util-repos/nordility"
+
+[downstream_repos]
+tracking_basis = "explicit code/config/operational integrations"
+paths = [
+  "./util-repos/snowbridge",  # README.md uses nordility to rotate NordVPN while preserving WireGuard access
+]
