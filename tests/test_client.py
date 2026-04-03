@@ -31,7 +31,9 @@ class NordVPNClientTests(unittest.TestCase):
             resolve_backend("nordvpn", "bad-backend")
 
     def test_resolve_executable_uses_which_on_linux(self) -> None:
-        with mock.patch("nordility.client.shutil.which", return_value="/usr/bin/nordvpn"):
+        with mock.patch(
+            "nordility.client.shutil.which", return_value="/usr/bin/nordvpn"
+        ):
             with mock.patch.dict("os.environ", {}, clear=True):
                 result = resolve_executable(None)
         self.assertEqual(result, "/usr/bin/nordvpn")
@@ -155,7 +157,9 @@ class NordVPNClientTests(unittest.TestCase):
         )
 
         with mock.patch("nordility.client._resolve_keepass_token", return_value="tok"):
-            result = client.connect(auto_login=True, keepass_entry="Nord_VPN#access-token")
+            result = client.connect(
+                auto_login=True, keepass_entry="Nord_VPN#access-token"
+            )
 
         self.assertEqual(calls[0], ("nordvpn", "connect"))
         self.assertEqual(calls[1], ("nordvpn", "login", "--token", "tok"))
@@ -166,40 +170,52 @@ class NordVPNClientTests(unittest.TestCase):
 class WireGuardRestoreTests(unittest.TestCase):
     def _make_runner(self, responses: dict[tuple, CompletedProcess]):
         """Return a fake runner that maps command tuples to CompletedProcess results."""
+
         def fake_runner(command, capture_output, text, check):
             key = tuple(command)
             if key in responses:
                 return responses[key]
             return CompletedProcess(command, 0, stdout="", stderr="")
+
         return fake_runner
 
     def test_discover_returns_interface_names(self) -> None:
-        runner = self._make_runner({
-            ("wg", "show", "interfaces"): CompletedProcess(
-                [], 0, stdout="wg0 wg1\n", stderr=""
-            ),
-        })
+        runner = self._make_runner(
+            {
+                ("wg", "show", "interfaces"): CompletedProcess(
+                    [], 0, stdout="wg0 wg1\n", stderr=""
+                ),
+            }
+        )
         self.assertEqual(_discover_wireguard_interfaces(runner), ["wg0", "wg1"])
 
     def test_discover_returns_empty_when_no_interfaces(self) -> None:
-        runner = self._make_runner({
-            ("wg", "show", "interfaces"): CompletedProcess([], 0, stdout="", stderr=""),
-        })
+        runner = self._make_runner(
+            {
+                ("wg", "show", "interfaces"): CompletedProcess(
+                    [], 0, stdout="", stderr=""
+                ),
+            }
+        )
         self.assertEqual(_discover_wireguard_interfaces(runner), [])
 
     def test_discover_returns_empty_on_wg_unavailable(self) -> None:
         def failing_runner(command, **_):
             raise FileNotFoundError("wg not found")
+
         self.assertEqual(_discover_wireguard_interfaces(failing_runner), [])
 
     def test_get_peer_endpoints_parses_output(self) -> None:
-        runner = self._make_runner({
-            ("wg", "show", "wg0", "endpoints"): CompletedProcess(
-                [], 0,
-                stdout="PUBKEY1\t203.0.113.1:51820\nPUBKEY2\t(none)\n",
-                stderr="",
-            ),
-        })
+        runner = self._make_runner(
+            {
+                ("wg", "show", "wg0", "endpoints"): CompletedProcess(
+                    [],
+                    0,
+                    stdout="PUBKEY1\t203.0.113.1:51820\nPUBKEY2\t(none)\n",
+                    stderr="",
+                ),
+            }
+        )
         result = _get_wireguard_peer_endpoints(runner, "wg0")
         self.assertEqual(result, {"PUBKEY1": "203.0.113.1:51820"})
         self.assertNotIn("PUBKEY2", result)
@@ -225,7 +241,9 @@ class WireGuardRestoreTests(unittest.TestCase):
         def runner(command, capture_output, text, check):
             real_calls.append(tuple(command))
             key = tuple(command)
-            return responses.get(key, CompletedProcess(command, 0, stdout="", stderr=""))
+            return responses.get(
+                key, CompletedProcess(command, 0, stdout="", stderr="")
+            )
 
         interfaces = _discover_wireguard_interfaces(runner)
         refreshed = _refresh_wireguard_peers(runner, interfaces)

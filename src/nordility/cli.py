@@ -29,7 +29,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    login_parser = subparsers.add_parser("login", help="Log in to NordVPN using a token.")
+    login_parser = subparsers.add_parser(
+        "login", help="Log in to NordVPN using a token."
+    )
     login_token_group = login_parser.add_mutually_exclusive_group()
     login_token_group.add_argument("--token", help="NordVPN access token.")
     login_token_group.add_argument(
@@ -37,7 +39,7 @@ def build_parser() -> argparse.ArgumentParser:
         default="Nord_VPN#access-token",
         metavar="ENTRY",
         help="KeePassXC entry path whose Token attribute holds the access token. "
-             "Default: Nord_VPN#access-token",
+        "Default: Nord_VPN#access-token",
     )
 
     connect_parser = subparsers.add_parser("connect", help="Connect to NordVPN.")
