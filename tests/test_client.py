@@ -374,7 +374,9 @@ class WireGuardRoutingRestoreTests(unittest.TestCase):
         def runner(command, capture_output, text, check):
             calls.append(tuple(command))
             if tuple(command) == ("ip", "rule", "show"):
-                return CompletedProcess(command, 0, stdout="32766:\tfrom all lookup main\n", stderr="")
+                return CompletedProcess(
+                    command, 0, stdout="32766:\tfrom all lookup main\n", stderr=""
+                )
             return CompletedProcess(command, 0, stdout="", stderr="")
 
         restored = _restore_wireguard_routing(runner, ["wg0"], fwmark=51820)
@@ -426,11 +428,29 @@ class WireGuardRoutingRestoreTests(unittest.TestCase):
         calls: list[tuple] = []
         responses = {
             ("ip", "rule", "show"): CompletedProcess([], 0, stdout="", stderr=""),
-            ("ip", "rule", "add", "fwmark", "51820", "lookup", "main", "priority", "100"): CompletedProcess(
-                [], 1, stdout="", stderr="Operation not permitted"
-            ),
             (
-                "sudo", "-n", "ip", "rule", "add", "fwmark", "51820", "lookup", "main", "priority", "100"
+                "ip",
+                "rule",
+                "add",
+                "fwmark",
+                "51820",
+                "lookup",
+                "main",
+                "priority",
+                "100",
+            ): CompletedProcess([], 1, stdout="", stderr="Operation not permitted"),
+            (
+                "sudo",
+                "-n",
+                "ip",
+                "rule",
+                "add",
+                "fwmark",
+                "51820",
+                "lookup",
+                "main",
+                "priority",
+                "100",
             ): CompletedProcess([], 0, stdout="", stderr=""),
         }
 
@@ -441,7 +461,19 @@ class WireGuardRoutingRestoreTests(unittest.TestCase):
         _restore_wireguard_routing(runner, ["wg0"], fwmark=51820)
 
         self.assertIn(
-            ("sudo", "-n", "ip", "rule", "add", "fwmark", "51820", "lookup", "main", "priority", "100"),
+            (
+                "sudo",
+                "-n",
+                "ip",
+                "rule",
+                "add",
+                "fwmark",
+                "51820",
+                "lookup",
+                "main",
+                "priority",
+                "100",
+            ),
             calls,
         )
 
@@ -467,7 +499,9 @@ class WireGuardRoutingRestoreTests(unittest.TestCase):
 
         def fake_runner(command, capture_output, text, check):
             calls.append(tuple(command))
-            return wg_responses.get(tuple(command), CompletedProcess(command, 0, stdout="ok", stderr=""))
+            return wg_responses.get(
+                tuple(command), CompletedProcess(command, 0, stdout="ok", stderr="")
+            )
 
         client = NordVPNClient(
             executable="nordvpn",
@@ -504,7 +538,9 @@ class WireGuardRoutingRestoreTests(unittest.TestCase):
 
         def fake_runner(command, capture_output, text, check):
             calls.append(tuple(command))
-            return wg_responses.get(tuple(command), CompletedProcess(command, 0, stdout="ok", stderr=""))
+            return wg_responses.get(
+                tuple(command), CompletedProcess(command, 0, stdout="ok", stderr="")
+            )
 
         client = NordVPNClient(
             executable="nordvpn",
@@ -536,7 +572,9 @@ class WireGuardRoutingRestoreTests(unittest.TestCase):
 
         def fake_runner(command, capture_output, text, check):
             calls.append(tuple(command))
-            return wg_responses.get(tuple(command), CompletedProcess(command, 0, stdout="ok", stderr=""))
+            return wg_responses.get(
+                tuple(command), CompletedProcess(command, 0, stdout="ok", stderr="")
+            )
 
         def fake_launcher(command):
             calls.append(tuple(command))
