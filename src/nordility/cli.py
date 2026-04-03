@@ -96,6 +96,14 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="ENTRY",
         help="KeePassXC entry to use for auto-login. Default: Nord_VPN#access-token",
     )
+    change_parser.add_argument(
+        "--restore-wireguard",
+        action="store_true",
+        help=(
+            "After switching NordVPN servers, force a handshake refresh on any active "
+            "WireGuard interfaces discovered via 'wg show interfaces'. No-op if none found."
+        ),
+    )
 
     list_parser = subparsers.add_parser(
         "list-groups", help="List built-in server groups."
@@ -145,6 +153,7 @@ def main(argv: list[str] | None = None) -> int:
                 wait_seconds=args.wait,
                 auto_login=args.auto_login,
                 keepass_entry=args.keepass_entry,
+                restore_wireguard=args.restore_wireguard,
             )
             print(result.message)
             return 0
