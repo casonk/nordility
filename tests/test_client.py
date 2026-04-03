@@ -220,6 +220,24 @@ class WireGuardRestoreTests(unittest.TestCase):
         self.assertEqual(result, {"PUBKEY1": "203.0.113.1:51820"})
         self.assertNotIn("PUBKEY2", result)
 
+    def test_get_peer_endpoints_retries_with_sudo_on_failure(self) -> None:
+        calls: list[tuple] = []
+        responses = {
+            ("wg", "show", "wg0", "endpoints"):
+                CompletedProcess([], 1, stdout="", stderr="Operation not permitted"),
+            ("sudo", "-n", "wg", "show", "wg0", "endpoints"):
+                CompletedProcess([], 0, stdout="PUBKEY\t10.0.0.1:51820\n", stderr=""),
+        }
+
+        def runner(command, capture_output, text, check):
+            calls.append(tuple(command))
+            return responses.get(tuple(command), CompletedProcess(command, 0, stdout="", stderr=""))
+
+        result = _get_wireguard_peer_endpoints(runner, "wg0")
+
+        self.assertEqual(result, {"PUBKEY": "10.0.0.1:51820"})
+        self.assertIn(("sudo", "-n", "wg", "show", "wg0", "endpoints"), calls)
+
     def test_refresh_peers_retries_with_sudo_on_permission_failure(self) -> None:
         real_calls: list[tuple] = []
         responses = {
