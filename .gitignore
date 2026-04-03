@@ -1,8 +1,11 @@
 __pycache__/
 .pytest_cache/
 .venv/
+config/auto-pass.ini
 build/
 dist/
 *.egg-info/
 CHATHISTORY.md
 .codex
+
+CLAUDE.md
