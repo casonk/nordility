@@ -139,6 +139,75 @@ def _is_not_logged_in(error_message: str) -> bool:
     return any(marker in lowered for marker in NOT_LOGGED_IN_MARKERS)
 
 
+def _discover_wireguard_interfaces(
+    runner: Callable[..., subprocess.CompletedProcess[str]],
+) -> list[str]:
+    """Return names of active WireGuard interfaces, or [] if none or wg unavailable."""
+    try:
+        result = runner(["wg", "show", "interfaces"], capture_output=True, text=True, check=False)
+        if result.returncode != 0 or not result.stdout.strip():
+            return []
+        return result.stdout.strip().split()
+    except (OSError, FileNotFoundError):
+        return []
+
+
+def _get_wireguard_peer_endpoints(
+    runner: Callable[..., subprocess.CompletedProcess[str]],
+    interface: str,
+) -> dict[str, str]:
+    """Return {pubkey: endpoint} for peers that have a known endpoint on *interface*."""
+    try:
+        result = runner(
+            ["wg", "show", interface, "endpoints"],
+            capture_output=True, text=True, check=False,
+        )
+        if result.returncode != 0:
+            return {}
+        peers: dict[str, str] = {}
+        for line in result.stdout.strip().splitlines():
+            parts = line.strip().split("\t", 1)
+            if len(parts) == 2 and parts[1] != "(none)":
+                peers[parts[0]] = parts[1]
+        return peers
+    except (OSError, FileNotFoundError):
+        return {}
+
+
+def _refresh_wireguard_peers(
+    runner: Callable[..., subprocess.CompletedProcess[str]],
+    interfaces: list[str],
+) -> list[str]:
+    """Force a handshake re-initiation for all peers on the given interfaces.
+
+    Re-sets each peer's endpoint to its current value, which causes the
+    WireGuard kernel module to immediately initiate a new handshake instead
+    of waiting for the next keepalive interval.
+
+    Returns the list of interface names where at least one peer was refreshed.
+    Requires the process to have permission to run ``wg set`` (typically root
+    or the ``wireguard`` group).
+    """
+    refreshed: list[str] = []
+    for iface in interfaces:
+        peers = _get_wireguard_peer_endpoints(runner, iface)
+        if not peers:
+            continue
+        any_set = False
+        for pubkey, endpoint in peers.items():
+            try:
+                runner(
+                    ["wg", "set", iface, "peer", pubkey, "endpoint", endpoint],
+                    capture_output=True, text=True, check=False,
+                )
+                any_set = True
+            except (OSError, FileNotFoundError):
+                pass
+        if any_set:
+            refreshed.append(iface)
+    return refreshed
+
+
 class NordilityError(RuntimeError):
     pass
 
@@ -273,6 +342,7 @@ class NordVPNClient:
         wait_seconds: float | None = None,
         auto_login: bool = False,
         keepass_entry: str | None = None,
+        restore_wireguard: bool = False,
     ) -> CommandResult:
         chosen_group = group or self.pick_group(speed)
         if wait_seconds is None:
@@ -287,9 +357,21 @@ class NordVPNClient:
                 result = self._execute(command, wait_seconds)
             else:
                 raise
+
+        wg_suffix = ""
+        if restore_wireguard:
+            interfaces = _discover_wireguard_interfaces(self._runner)
+            if interfaces:
+                LOGGER.info("Refreshing WireGuard handshakes on: %s", ", ".join(interfaces))
+                refreshed = _refresh_wireguard_peers(self._runner, interfaces)
+                if refreshed:
+                    wg_suffix = f"; WireGuard refreshed on {', '.join(refreshed)}"
+            else:
+                LOGGER.debug("No active WireGuard interfaces discovered; skipping restore.")
+
         return CommandResult(
             command=result.command,
-            message=f"VPN Connection Successfully Redirected to {chosen_group}",
+            message=f"VPN Connection Successfully Redirected to {chosen_group}{wg_suffix}",
             group=chosen_group,
             returncode=result.returncode,
             stdout=result.stdout,
@@ -421,11 +503,15 @@ def change_vpn_server(
     executable: str | None = None,
     backend: str = "auto",
     group: str | None = None,
+    restore_wireguard: bool = False,
 ) -> str | CommandResult:
     client = NordVPNClient(executable=executable, backend=backend)
     try:
         wait_seconds = fast_reset if speed == "fast" else default_reset
-        result = client.change(speed=speed, group=group, wait_seconds=wait_seconds)
+        result = client.change(
+            speed=speed, group=group, wait_seconds=wait_seconds,
+            restore_wireguard=restore_wireguard,
+        )
         return result.message if status else result
     except NordilityError as exc:
         LOGGER.error("%s\nexception in change_vpn_server", exc)
