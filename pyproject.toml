@@ -27,6 +27,17 @@ dev = [
     "pytest>=8",
     "dyno_lab @ git+https://github.com/casonk/dyno-lab.git",
 ]
+[tool.black]
+line-length = 88
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
 [tool.setuptools]
 package-dir = { "" = "src" }
 
