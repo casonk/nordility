@@ -181,6 +181,79 @@ def _get_wireguard_peer_endpoints(
         return {}
 
 
+def _restore_wireguard_routing(
+    runner: Callable[..., subprocess.CompletedProcess[str]],
+    interfaces: list[str],
+    fwmark: int = 51820,
+    ip_rule_priority: int = 100,
+) -> list[str]:
+    """Re-apply the WireGuard socket fwmark and the matching ip rule on each interface.
+
+    NordVPN's disconnect phase (triggered during server rotation) flushes ip
+    rules, including any rule that routes WireGuard-marked packets to the main
+    routing table instead of nordlynx.  This function re-applies both pieces:
+
+    1. ``wg set <iface> fwmark <fwmark>`` — sets the socket-level SO_MARK so
+       WireGuard's outgoing UDP packets carry the mark at routing-decision time.
+    2. ``ip rule add fwmark <fwmark> lookup main priority <p>`` — ensures a
+       policy-routing rule exists that sends marked packets via the main table
+       (real internet gateway) before NordVPN's higher-numbered rules can
+       redirect them through nordlynx.
+
+    Both commands are tried without privilege first then retried via
+    ``sudo -n`` if the first attempt returns non-zero (matching the pattern
+    used by :func:`_refresh_wireguard_peers`).
+
+    Returns the list of interfaces where the fwmark was successfully set.
+    The ip rule is global (not per-interface) and is added at most once.
+    """
+    restored: list[str] = []
+    fwmark_hex = hex(fwmark)
+
+    for iface in interfaces:
+        cmd = ["wg", "set", iface, "fwmark", str(fwmark)]
+        try:
+            result = runner(cmd, capture_output=True, text=True, check=False)
+            if result.returncode != 0:
+                result = runner(["sudo", "-n"] + cmd, capture_output=True, text=True, check=False)
+            if result.returncode == 0:
+                restored.append(iface)
+            else:
+                LOGGER.warning("Could not set fwmark %s on %s", fwmark_hex, iface)
+        except (OSError, FileNotFoundError):
+            LOGGER.warning("wg not available; skipping fwmark for %s", iface)
+
+    if not restored:
+        return restored
+
+    # The ip rule is global — add it once after confirming at least one interface
+    # had its fwmark set successfully.
+    try:
+        show = runner(["ip", "rule", "show"], capture_output=True, text=True, check=False)
+        if show.returncode == 0 and fwmark_hex in show.stdout:
+            LOGGER.debug("ip rule for fwmark %s already present; skipping", fwmark_hex)
+            return restored
+        add_cmd = [
+            "ip", "rule", "add",
+            "fwmark", str(fwmark),
+            "lookup", "main",
+            "priority", str(ip_rule_priority),
+        ]
+        add_result = runner(add_cmd, capture_output=True, text=True, check=False)
+        if add_result.returncode != 0:
+            add_result = runner(
+                ["sudo", "-n"] + add_cmd, capture_output=True, text=True, check=False
+            )
+        if add_result.returncode != 0:
+            LOGGER.warning(
+                "Could not add ip rule for fwmark %s (priority %d)", fwmark_hex, ip_rule_priority
+            )
+    except (OSError, FileNotFoundError):
+        LOGGER.warning("ip not available; skipping routing rule")
+
+    return restored
+
+
 def _refresh_wireguard_peers(
     runner: Callable[..., subprocess.CompletedProcess[str]],
     interfaces: list[str],
@@ -368,6 +441,7 @@ class NordVPNClient:
         auto_login: bool = False,
         keepass_entry: str | None = None,
         restore_wireguard: bool = False,
+        wireguard_fwmark: int = 51820,
     ) -> CommandResult:
         chosen_group = group or self.pick_group(speed)
         if wait_seconds is None:
@@ -391,6 +465,13 @@ class NordVPNClient:
                 refreshed = _refresh_wireguard_peers(self._runner, interfaces)
                 if refreshed:
                     wg_suffix = f"; WireGuard refreshed on {', '.join(refreshed)}"
+                if self.backend == "cli":
+                    LOGGER.info("Restoring WireGuard routing on: %s", ", ".join(interfaces))
+                    routing_restored = _restore_wireguard_routing(
+                        self._runner, interfaces, fwmark=wireguard_fwmark
+                    )
+                    if routing_restored:
+                        wg_suffix += f"; routing restored on {', '.join(routing_restored)}"
             else:
                 LOGGER.debug("No active WireGuard interfaces discovered; skipping restore.")
 
@@ -529,6 +610,7 @@ def change_vpn_server(
     backend: str = "auto",
     group: str | None = None,
     restore_wireguard: bool = False,
+    wireguard_fwmark: int = 51820,
 ) -> str | CommandResult:
     client = NordVPNClient(executable=executable, backend=backend)
     try:
@@ -538,6 +620,7 @@ def change_vpn_server(
             group=group,
             wait_seconds=wait_seconds,
             restore_wireguard=restore_wireguard,
+            wireguard_fwmark=wireguard_fwmark,
         )
         return result.message if status else result
     except NordilityError as exc:

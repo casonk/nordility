@@ -99,7 +99,21 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help=(
             "After switching NordVPN servers, force a handshake refresh on any active "
-            "WireGuard interfaces discovered via 'wg show interfaces'. No-op if none found."
+            "WireGuard interfaces discovered via 'wg show interfaces'. On Linux (cli "
+            "backend) also re-applies the socket fwmark and ip rule so WireGuard "
+            "responses continue to route via the real internet gateway instead of "
+            "nordlynx. No-op if no WireGuard interfaces are found."
+        ),
+    )
+    change_parser.add_argument(
+        "--wireguard-fwmark",
+        type=int,
+        default=51820,
+        metavar="FWMARK",
+        help=(
+            "Socket fwmark value used by the WireGuard interface (decimal). "
+            "Used with --restore-wireguard on Linux to re-apply the ip routing rule. "
+            "Default: 51820 (0xca54)."
         ),
     )
 
@@ -150,6 +164,7 @@ def main(argv: list[str] | None = None) -> int:
                 auto_login=args.auto_login,
                 keepass_entry=args.keepass_entry,
                 restore_wireguard=args.restore_wireguard,
+                wireguard_fwmark=args.wireguard_fwmark,
             )
             print(result.message)
             return 0
