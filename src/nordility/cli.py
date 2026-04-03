@@ -4,16 +4,14 @@ import argparse
 import logging
 import sys
 
-from nordility.client import NordVPNClient, NordilityError
+from nordility.client import NordilityError, NordVPNClient
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Automate NordVPN connect/disconnect/rotation tasks."
     )
-    parser.add_argument(
-        "--executable", help="Path to NordVPN.exe or the nordvpn CLI executable."
-    )
+    parser.add_argument("--executable", help="Path to NordVPN.exe or the nordvpn CLI executable.")
     parser.add_argument(
         "--backend",
         choices=("auto", "windows", "cli"),
@@ -29,9 +27,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    login_parser = subparsers.add_parser(
-        "login", help="Log in to NordVPN using a token."
-    )
+    login_parser = subparsers.add_parser("login", help="Log in to NordVPN using a token.")
     login_token_group = login_parser.add_mutually_exclusive_group()
     login_token_group.add_argument("--token", help="NordVPN access token.")
     login_token_group.add_argument(
@@ -107,9 +103,7 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
 
-    list_parser = subparsers.add_parser(
-        "list-groups", help="List built-in server groups."
-    )
+    list_parser = subparsers.add_parser("list-groups", help="List built-in server groups.")
     list_parser.add_argument(
         "--speed",
         choices=("fast", "full"),
