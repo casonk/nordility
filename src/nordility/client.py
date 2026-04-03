@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import random
+import shutil
 import subprocess
 import sys
 import time
@@ -236,6 +237,7 @@ def resolve_executable(executable: str | None) -> str:
     return (
         os.getenv("NORDILITY_EXECUTABLE")
         or os.getenv("NORDVPN_EXECUTABLE")
+        or shutil.which("nordvpn")
         or DEFAULT_WINDOWS_EXECUTABLE
     )
 
