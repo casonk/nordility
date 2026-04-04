@@ -147,8 +147,10 @@ def _resolve_keepass_token(
     if _src not in sys.path:
         sys.path.insert(0, _src)
     from auto_pass.envfile import load_config_environment  # noqa: PLC0415
-    from auto_pass.keepassxc import KeepassCommandError  # noqa: PLC0415
-    from auto_pass.keepassxc import resolve_keepassxc_entry  # noqa: PLC0415
+    from auto_pass.keepassxc import (
+        KeepassCommandError,  # noqa: PLC0415
+        resolve_keepassxc_entry,  # noqa: PLC0415
+    )
 
     _ap_env = _AUTO_PASS_ROOT / "config" / "auto-pass.env.local"
     if _ap_env.is_file():

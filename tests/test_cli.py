@@ -2,7 +2,7 @@ import io
 from unittest import TestCase, mock
 
 from nordility.cli import main
-from nordility.client import CommandResult, DEFAULT_KEEPASS_ENTRY, NordilityError
+from nordility.client import DEFAULT_KEEPASS_ENTRY, CommandResult, NordilityError
 
 _DEFAULT_KEEPASS_DEFAULTS = ("infra", DEFAULT_KEEPASS_ENTRY)
 
@@ -19,7 +19,9 @@ class CLITests(TestCase):
 
         stdout = io.StringIO()
         with (
-            mock.patch("nordility.cli._resolve_keepass_defaults", return_value=_DEFAULT_KEEPASS_DEFAULTS),
+            mock.patch(
+                "nordility.cli._resolve_keepass_defaults", return_value=_DEFAULT_KEEPASS_DEFAULTS
+            ),
             mock.patch("sys.stdout", new=stdout),
         ):
             exit_code = main(["connect"])
@@ -41,7 +43,9 @@ class CLITests(TestCase):
 
         stdout = io.StringIO()
         with (
-            mock.patch("nordility.cli._resolve_keepass_defaults", return_value=_DEFAULT_KEEPASS_DEFAULTS),
+            mock.patch(
+                "nordility.cli._resolve_keepass_defaults", return_value=_DEFAULT_KEEPASS_DEFAULTS
+            ),
             mock.patch("sys.stdout", new=stdout),
         ):
             exit_code = main(["list-groups"])
@@ -57,7 +61,9 @@ class CLITests(TestCase):
 
         stderr = io.StringIO()
         with (
-            mock.patch("nordility.cli._resolve_keepass_defaults", return_value=_DEFAULT_KEEPASS_DEFAULTS),
+            mock.patch(
+                "nordility.cli._resolve_keepass_defaults", return_value=_DEFAULT_KEEPASS_DEFAULTS
+            ),
             mock.patch("sys.stderr", new=stderr),
         ):
             exit_code = main(["connect"])
@@ -76,7 +82,9 @@ class CLITests(TestCase):
 
         stdout = io.StringIO()
         with (
-            mock.patch("nordility.cli._resolve_keepass_defaults", return_value=_DEFAULT_KEEPASS_DEFAULTS),
+            mock.patch(
+                "nordility.cli._resolve_keepass_defaults", return_value=_DEFAULT_KEEPASS_DEFAULTS
+            ),
             mock.patch("sys.stdout", new=stdout),
         ):
             exit_code = main(["login", "--token", "tok"])
@@ -98,7 +106,9 @@ class CLITests(TestCase):
             returncode=0,
         )
 
-        with mock.patch("nordility.cli._resolve_keepass_defaults", return_value=_DEFAULT_KEEPASS_DEFAULTS):
+        with mock.patch(
+            "nordility.cli._resolve_keepass_defaults", return_value=_DEFAULT_KEEPASS_DEFAULTS
+        ):
             main(["login"])
 
         mock_client.login.assert_called_once_with(
@@ -116,7 +126,9 @@ class CLITests(TestCase):
             returncode=0,
         )
 
-        with mock.patch("nordility.cli._resolve_keepass_defaults", return_value=_DEFAULT_KEEPASS_DEFAULTS):
+        with mock.patch(
+            "nordility.cli._resolve_keepass_defaults", return_value=_DEFAULT_KEEPASS_DEFAULTS
+        ):
             main(["connect", "--auto-login"])
 
         mock_client.connect.assert_called_once_with(
@@ -136,7 +148,9 @@ class CLITests(TestCase):
             returncode=0,
         )
 
-        with mock.patch("nordility.cli._resolve_keepass_defaults", return_value=_DEFAULT_KEEPASS_DEFAULTS):
+        with mock.patch(
+            "nordility.cli._resolve_keepass_defaults", return_value=_DEFAULT_KEEPASS_DEFAULTS
+        ):
             main(["connect", "--keepass-profile", "work"])
 
         mock_client.connect.assert_called_once_with(
@@ -159,7 +173,9 @@ class CLITests(TestCase):
 
         stdout = io.StringIO()
         with (
-            mock.patch("nordility.cli._resolve_keepass_defaults", return_value=_DEFAULT_KEEPASS_DEFAULTS),
+            mock.patch(
+                "nordility.cli._resolve_keepass_defaults", return_value=_DEFAULT_KEEPASS_DEFAULTS
+            ),
             mock.patch("sys.stdout", new=stdout),
         ):
             exit_code = main(["change", "--restore-wireguard"])
