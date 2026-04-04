@@ -1,0 +1,12 @@
+[repo]
+name = "nordility"
+category = "util-repos"
+kind = "python"
+
+[paths]
+disk_path = "."
+profile_path = ".tachometer/profile.json"
+summary_path = ".tachometer/summary.json"
+
+[defaults]
+label = "repo-snapshot"
