@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import sys
 import unittest
 from pathlib import Path
@@ -7,9 +8,17 @@ from pathlib import Path
 DYNO_LAB_SRC = Path(__file__).resolve().parents[2] / "dyno-lab" / "src"
 if str(DYNO_LAB_SRC) not in sys.path:
     sys.path.insert(0, str(DYNO_LAB_SRC))
+for module_name in [
+    name for name in sys.modules if name == "dyno_lab" or name.startswith("dyno_lab.")
+]:
+    del sys.modules[module_name]
 
-from dyno_lab.auto_pass import AutoPassPatch, AutoPassRecorder
-from nordility.client import _resolve_keepass_token
+auto_pass = importlib.import_module("dyno_lab.auto_pass")
+
+from nordility.client import _resolve_keepass_token  # noqa: E402
+
+AutoPassPatch = auto_pass.AutoPassPatch
+AutoPassRecorder = auto_pass.AutoPassRecorder
 
 
 class NordilityAutoPassTests(unittest.TestCase):
@@ -29,7 +38,9 @@ class NordilityAutoPassTests(unittest.TestCase):
 
         self.assertEqual(token, "vpn-token-123")
         self.assertEqual(recorder.load_calls[0].profile, "work")
-        self.assertTrue(str(recorder.load_calls[0].path).endswith("auto-pass/config/auto-pass.env.local"))
+        self.assertTrue(
+            str(recorder.load_calls[0].path).endswith("auto-pass/config/auto-pass.env.local")
+        )
         self.assertEqual(
             [call.entry for call in recorder.resolve_calls],
             ["provider#access-token", "nordvpn/provider#access-token"],
