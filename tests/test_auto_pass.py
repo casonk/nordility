@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import importlib
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 DYNO_LAB_SRC = Path(__file__).resolve().parents[2] / "dyno-lab" / "src"
 if str(DYNO_LAB_SRC) not in sys.path:
@@ -33,14 +35,21 @@ class NordilityAutoPassTests(unittest.TestCase):
             {"token": "vpn-token-123"},
         )
 
-        with AutoPassPatch(recorder):
-            token = _resolve_keepass_token("provider#access-token", "work")
+        with tempfile.TemporaryDirectory() as temp_dir:
+            auto_pass_root = Path(temp_dir)
+            env_path = auto_pass_root / "config" / "auto-pass.env.local"
+            env_path.parent.mkdir(parents=True, exist_ok=True)
+            env_path.write_text("# test env\n", encoding="utf-8")
+
+            with (
+                AutoPassPatch(recorder),
+                mock.patch("nordility.client._AUTO_PASS_ROOT", auto_pass_root),
+            ):
+                token = _resolve_keepass_token("provider#access-token", "work")
 
         self.assertEqual(token, "vpn-token-123")
         self.assertEqual(recorder.load_calls[0].profile, "work")
-        self.assertTrue(
-            str(recorder.load_calls[0].path).endswith("auto-pass/config/auto-pass.env.local")
-        )
+        self.assertEqual(Path(recorder.load_calls[0].path), env_path)
         self.assertEqual(
             [call.entry for call in recorder.resolve_calls],
             ["provider#access-token", "nordvpn/provider#access-token"],
