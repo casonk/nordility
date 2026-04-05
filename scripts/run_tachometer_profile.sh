@@ -26,7 +26,7 @@ run_tachometer() {
     printf "tachometer is not installed and util-repos/tachometer/src was not found from %s\n" "$repo_root" >&2
     return 1
   fi
-  PYTHONPATH="$tachometer_src${PYTHONPATH:+:$PYTHONPATH}" python3 -m tachometer.cli "$@"
+  PYTHONPATH="$tachometer_src${PYTHONPATH:+:$PYTHONPATH}" python3 -m tachometer "$@"
 }
 
 subcommand="${1:-snapshot}"
