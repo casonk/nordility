@@ -108,6 +108,17 @@ This project currently uses the standard library `unittest` framework. Match the
 - Avoid writing tests that require a real NordVPN installation or network access.
 - Favor small, explicit changes over abstractions; the current code is intentionally direct.
 
+## Local CI Verification
+
+Run before every push:
+
+```bash
+pre-commit run --all-files
+pytest -q
+```
+
+Do not push changes that have not passed all checks locally.
+
 ## Portfolio Standards Reference
 
 For portfolio-wide repository standards and baseline conventions, consult the control-plane repo at `./util-repos/traction-control` from the portfolio root.
