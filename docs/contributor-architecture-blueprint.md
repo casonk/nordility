@@ -50,13 +50,13 @@ plantuml -tpng -tsvg docs/diagrams/repo-architecture.puml
 
 ### CLI Flow
 
-`nordility` or `python -m nordility`  
--> `build_parser()` parses flags and subcommands  
--> `main()` configures logging and instantiates `NordVPNClient`  
--> `NordVPNClient` resolves executable and backend  
--> command builders produce backend-specific command tuples  
--> backend execution launches the process  
--> `CommandResult` or `NordilityError` returns to the CLI  
+`nordility` or `python -m nordility`
+-> `build_parser()` parses flags and subcommands
+-> `main()` configures logging and instantiates `NordVPNClient`
+-> `NordVPNClient` resolves executable and backend
+-> command builders produce backend-specific command tuples
+-> backend execution launches the process
+-> `CommandResult` or `NordilityError` returns to the CLI
 -> CLI prints the final message and exits with an appropriate status
 
 ### Python API Flow
