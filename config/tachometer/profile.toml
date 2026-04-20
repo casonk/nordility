@@ -10,3 +10,7 @@ summary_path = ".tachometer/summary.json"
 
 [defaults]
 label = "repo-snapshot"
+[notify]
+shock_relay_root = "SHOCK_RELAY_ROOT_PLACEHOLDER"
+service = "signal"
+target = "+1XXXXXXXXXX"
