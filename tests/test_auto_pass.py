@@ -1,13 +1,29 @@
 from __future__ import annotations
 
 import importlib
+import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
 
-DYNO_LAB_SRC = Path(__file__).resolve().parents[2] / "dyno-lab" / "src"
+
+def _resolve_dyno_lab_src() -> Path:
+    worktree_guess = Path(__file__).resolve().parents[2] / "dyno-lab" / "src"
+    if worktree_guess.exists():
+        return worktree_guess
+
+    common_dir = subprocess.check_output(
+        ["git", "rev-parse", "--git-common-dir"],
+        cwd=Path(__file__).resolve().parent,
+        text=True,
+    ).strip()
+    common_guess = Path(common_dir).resolve().parent.parent / "dyno-lab" / "src"
+    return common_guess
+
+
+DYNO_LAB_SRC = _resolve_dyno_lab_src()
 if str(DYNO_LAB_SRC) not in sys.path:
     sys.path.insert(0, str(DYNO_LAB_SRC))
 for module_name in [
