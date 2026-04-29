@@ -9,14 +9,23 @@ description = "Simple NordVPN automation helpers extracted from citegres."
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [
-  { name = "Cason Konzer" },
+  { name = "Cason Konzer", email = "casonk@umich.edu" },
 ]
-keywords = ["nordvpn", "vpn", "automation"]
+license = { text = "MIT" }
+keywords = ["nordvpn", "vpn", "automation", "cli", "networking"]
 classifiers = [
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
-  "Operating System :: OS Independent",
+  "Operating System :: POSIX :: Linux",
+  "Topic :: System :: Networking",
+  "Topic :: Utilities",
+  "License :: OSI Approved :: MIT License",
 ]
+
+[project.urls]
+Homepage = "https://github.com/casonk/nordility"
+Repository = "https://github.com/casonk/nordility"
+Changelog = "https://github.com/casonk/nordility/blob/main/CHANGELOG.md"
 
 [project.scripts]
 nordility = "nordility.cli:main"
