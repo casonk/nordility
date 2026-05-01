@@ -9,6 +9,12 @@ regexes = [
   '''\+1XXXXXXXXXX''',
   # Scrubbed path placeholder
   '''SHOCK_RELAY_ROOT_PLACEHOLDER''',
+  # 555 area code — US reserved for fictional/test use (North American Numbering Plan)
+  '''\+1555\d{7}''',
+  # Obvious synthetic test numbers (all same digit, trailing zeros)
+  '''\+1[0-9]{3}0{7}''',
+  '''\+1[0-9]{3}9{7}''',
+  '''\+19{10}''',
 ]
 
 # ─── Portfolio-specific rules ────────────────────────────────────────────────
@@ -21,9 +27,24 @@ tags = ["phone", "pii"]
 
 [[rules]]
 id = "portfolio-git-workspace-path"
-description = "Hardcoded absolute path to local git workspace"
+description = "Hardcoded absolute path to local git workspace in config/code/scripts"
 regex = '''/mnt/[a-zA-Z0-9_-]+/git/'''
 tags = ["local-path", "machine-specific"]
+# Skip documentation and governance files which may reference machine layout as examples.
+# Flag only config/data/script paths where real leaks happen.
+[rules.allowlist]
+paths = [
+  '''.*\.md$''',
+  '''.*\.rst$''',
+  '''.*\.txt$''',
+  '''.*CHANGELOG.*''',
+  '''.*README.*''',
+  '''.*AGENTS.*''',
+  '''.*CONTRIBUTING.*''',
+  '''.*SECURITY.*''',
+  '''.*LESSONSLEARNED.*''',
+  '''.*REFS-PUBLIC.*''',
+]
 
 [[rules]]
 id = "tachometer-notify-target-phone"
@@ -36,16 +57,18 @@ id = "biometric-height-imperial"
 description = "Human height in imperial feet/inches format (PII)"
 regex = '''[45]'\d{1,2}"'''
 tags = ["biometric", "pii"]
-paths = ['''.*\.(json|yaml|yml|toml|csv)$''']
+# Only flag in data/config files, not documentation
+[rules.allowlist]
+paths = ['''.*\.md$''', '''.*\.rst$''', '''.*\.txt$''']
 
 [[rules]]
 id = "biometric-weight-lb-field"
-description = "Numeric weight_lb JSON/TOML field value (PII)"
+description = "Numeric weight_lb JSON field value (PII)"
 regex = '''"weight_lb"\s*:\s*\d{3}'''
 tags = ["biometric", "pii"]
 
 [[rules]]
 id = "biometric-weight-kg-field"
-description = "Numeric weight_kg JSON/TOML field value (PII)"
+description = "Numeric weight_kg JSON field value (PII)"
 regex = '''"weight_kg_approx"\s*:\s*\d{2,3}'''
 tags = ["biometric", "pii"]
