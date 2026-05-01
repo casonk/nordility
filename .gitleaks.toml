@@ -1,0 +1,51 @@
+title = "Portfolio Secret Scanner — casonk"
+
+# ─── Global allowlist ────────────────────────────────────────────────────────
+[allowlist]
+description = "Patterns that are safe to commit"
+regexes = [
+  # Scrubbed phone-number placeholders
+  '''\+1[Xx]{5,}''',
+  '''\+1XXXXXXXXXX''',
+  # Scrubbed path placeholder
+  '''SHOCK_RELAY_ROOT_PLACEHOLDER''',
+]
+
+# ─── Portfolio-specific rules ────────────────────────────────────────────────
+
+[[rules]]
+id = "portfolio-us-phone-e164"
+description = "Personal US phone number in E.164 format (PII)"
+regex = '''\+1[2-9]\d{9}'''
+tags = ["phone", "pii"]
+
+[[rules]]
+id = "portfolio-git-workspace-path"
+description = "Hardcoded absolute path to local git workspace"
+regex = '''/mnt/[a-zA-Z0-9_-]+/git/'''
+tags = ["local-path", "machine-specific"]
+
+[[rules]]
+id = "tachometer-notify-target-phone"
+description = "Tachometer [notify] target field with a committed US phone number"
+regex = '''target\s*=\s*"\+1[2-9]\d{9}'''
+tags = ["tachometer", "phone", "pii"]
+
+[[rules]]
+id = "biometric-height-imperial"
+description = "Human height in imperial feet/inches format (PII)"
+regex = '''[45]'\d{1,2}"'''
+tags = ["biometric", "pii"]
+paths = ['''.*\.(json|yaml|yml|toml|csv)$''']
+
+[[rules]]
+id = "biometric-weight-lb-field"
+description = "Numeric weight_lb JSON/TOML field value (PII)"
+regex = '''"weight_lb"\s*:\s*\d{3}'''
+tags = ["biometric", "pii"]
+
+[[rules]]
+id = "biometric-weight-kg-field"
+description = "Numeric weight_kg JSON/TOML field value (PII)"
+regex = '''"weight_kg_approx"\s*:\s*\d{2,3}'''
+tags = ["biometric", "pii"]
