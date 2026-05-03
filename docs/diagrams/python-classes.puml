@@ -1,5 +1,9 @@
 @startuml classes_nordility
 set namespaceSeparator none
+class "ActionOutcome" as src.nordility.web.ActionOutcome {
+  repair
+  result
+}
 class "<color:red>CommandExecutionError</color>" as src.nordility.client.CommandExecutionError {
 }
 class "CommandResult" as src.nordility.client.CommandResult {
@@ -24,6 +28,30 @@ class "NordVPNClient" as src.nordility.client.NordVPNClient {
 }
 class "<color:red>NordilityError</color>" as src.nordility.client.NordilityError {
 }
+class "NordilityWebController" as src.nordility.web.NordilityWebController {
+  client
+  perform_action(payload: dict[str, Any]) -> ActionOutcome
+  status() -> dict[str, Any]
+}
+class "NordilityWebHandler" as src.nordility.web.make_handler.NordilityWebHandler {
+  server_version : str
+  do_GET() -> None
+  do_HEAD() -> None
+  do_POST() -> None
+  log_message(fmt: str) -> None
+}
+class "WireGuardRestoreSummary" as src.nordility.client.WireGuardRestoreSummary {
+  interfaces : tuple[str, ...]
+  refreshed : tuple[str, ...]
+  routing_candidates : tuple[str, ...]
+  routing_restored : tuple[str, ...]
+  started : tuple[str, ...]
+  describe() -> str
+  message_suffix() -> str
+}
 src.nordility.client.CommandExecutionError --|> src.nordility.client.NordilityError
 src.nordility.client.ConfigurationError --|> src.nordility.client.NordilityError
+src.nordility.web.ActionOutcome --> src.nordility.client.CommandResult : result
+src.nordility.web.ActionOutcome --> src.nordility.client.WireGuardRestoreSummary : repair
+src.nordility.client.NordVPNClient --* src.nordility.web.NordilityWebController : client
 @enduml

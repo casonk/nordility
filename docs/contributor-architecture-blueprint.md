@@ -20,7 +20,7 @@ plantuml -tpng -tsvg docs/diagrams/repo-architecture.puml
 ## High-Level Layers
 
 1. Entry Surface (`src/nordility/cli.py`, `src/nordility/__main__.py`, `src/nordility/__init__.py`)
-   - The CLI exposes `connect`, `disconnect`, `change`, and `list-groups`.
+   - The CLI exposes `connect`, `disconnect`, `change`, `watch-wireguard`, `web`, and `list-groups`.
    - `python -m nordility` delegates to the same CLI entry point.
    - `nordility.__init__` re-exports the compatibility helpers and the core client.
 2. Configuration Layer (`src/nordility/client.py`)
@@ -31,7 +31,9 @@ plantuml -tpng -tsvg docs/diagrams/repo-architecture.puml
    - `NordVPNClient` owns command building, group selection, wait handling, and backend dispatch.
    - `connect()` and `disconnect()` build backend-specific commands and return `CommandResult`.
    - `change()` selects an explicit or random group and applies default waits of 10 seconds for `fast` and 30 seconds for `full`.
+   - `watch_nordvpn_wireguard()` detects NordVPN/NordLynx state changes, starts configured WireGuard interfaces that are down, and repairs user-managed WireGuard routing.
    - `list_groups()` and `pick_group()` expose the built-in country pools.
+   - `src/nordility/web.py` serves a dependency-free localhost control page for private Caddy/mTLS access.
 4. Backend Execution Layer (`src/nordility/client.py`)
    - The `windows` backend launches `NordVPN.exe` via `subprocess.Popen`.
    - The `cli` backend runs the `nordvpn` terminal CLI via `subprocess.run`.
@@ -59,6 +61,25 @@ plantuml -tpng -tsvg docs/diagrams/repo-architecture.puml
 -> `CommandResult` or `NordilityError` returns to the CLI
 -> CLI prints the final message and exits with an appropriate status
 
+### Watch Service Flow
+
+`nordility watch-wireguard`
+-> start configured WireGuard interfaces such as `wg0` when down
+-> initial WireGuard repair pass
+-> poll `nordvpn status` and NordLynx WireGuard state
+-> on reconnect/rotate or missing routing state, refresh WireGuard peers
+-> set the socket fwmark only on interfaces backed by `/etc/wireguard/<iface>.conf`
+-> ensure `fwmark 51820 lookup main priority 100` exists
+
+### Web Control Flow
+
+`nordility web`
+-> bind `127.0.0.1:5300`
+-> wiring-harness Caddy exposes `https://nordility.clockwork.internal`
+-> Safari posts power/rotate/group actions
+-> `NordVPNClient` runs the requested CLI command
+-> WireGuard repair runs after each action
+
 ### Python API Flow
 
 Compatibility helpers:
@@ -80,6 +101,8 @@ Each helper:
 - Internal group pools use underscore-separated country names.
 - `cli` execution converts underscores to spaces at the final command boundary only.
 - Windows execution is launch-oriented and can sleep after `Popen`; CLI execution is synchronous and raises on non-zero exit.
+- WireGuard routing repair must not overwrite NordVPN's daemon-managed `nordlynx` fwmark.
+- The web control surface must bind to localhost and rely on wiring-harness Caddy/mTLS for phone-facing access.
 - The compatibility helper names and CLI verbs are part of the public surface and should remain stable unless a breaking change is intentional.
 
 ## Key Entry Points
