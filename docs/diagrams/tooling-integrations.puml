@@ -6,17 +6,35 @@ skinparam defaultFontName Monospace
 skinparam componentStyle rectangle
 skinparam linetype ortho
 rectangle ".github/workflows/ci.yml\n9 detected tools" as source_github_workflows_ci_yml #E0F2FE
+rectangle ".github/workflows/python-publish.yml\n7 detected tools" as source_github_workflows_python_publish_yml #E0F2FE
+rectangle ".github/workflows/secret-scan.yml\n2 detected tools" as source_github_workflows_secret_scan_yml #E0F2FE
+rectangle "scripts/install_autoconnect_service.sh\n6 detected tools" as source_scripts_install_autoconnect_service_sh #E0F2FE
+rectangle "scripts/install_web_service.sh\n5 detected tools" as source_scripts_install_web_service_sh #E0F2FE
+rectangle "scripts/install_wireguard_watch_service.sh\n3 detected tools" as source_scripts_install_wireguard_watch_service_sh #E0F2FE
 rectangle "scripts/run_tachometer_profile.sh\n3 detected tools" as source_scripts_run_tachometer_profile_sh #E0F2FE
 cloud "actions/checkout" as tool_actions_checkout #FEF3C7
+cloud "actions/download-artifact" as tool_actions_download_artifact #FEF3C7
 cloud "actions/setup-python" as tool_actions_setup_python #FEF3C7
+cloud "actions/upload-artifact" as tool_actions_upload_artifact #FEF3C7
+cloud "auto_login_args+=(--keepass-entry" as tool_auto_login_args_keepass_entry #FEF3C7
+cloud "auto_login_args+=(--keepass-profile" as tool_auto_login_args_keepass_profile #FEF3C7
 cloud "black" as tool_black #FEF3C7
+cloud "build" as tool_build #FEF3C7
+cloud "cat" as tool_cat #FEF3C7
+cloud "connect_args+=(--group" as tool_connect_args_group #FEF3C7
+cloud "connect_args+=(--keepass-entry" as tool_connect_args_keepass_entry #FEF3C7
+cloud "connect_args+=(--keepass-profile" as tool_connect_args_keepass_profile #FEF3C7
+cloud "gitleaks/gitleaks-action" as tool_gitleaks_gitleaks_action #FEF3C7
+cloud "install" as tool_install #FEF3C7
 cloud "ls-files" as tool_ls_files #FEF3C7
 cloud "pip" as tool_pip #FEF3C7
 cloud "pylint" as tool_pylint #FEF3C7
+cloud "pypa/gh-action-pypi-publish" as tool_pypa_gh_action_pypi_publish #FEF3C7
 cloud "pytest" as tool_pytest #FEF3C7
 cloud "ruff" as tool_ruff #FEF3C7
 cloud "run" as tool_run #FEF3C7
 cloud "summarize" as tool_summarize #FEF3C7
+cloud "systemctl" as tool_systemctl #FEF3C7
 cloud "tachometer" as tool_tachometer #FEF3C7
 cloud "tee" as tool_tee #FEF3C7
 source_github_workflows_ci_yml --> tool_actions_checkout
@@ -28,11 +46,34 @@ source_github_workflows_ci_yml --> tool_pylint
 source_github_workflows_ci_yml --> tool_pytest
 source_github_workflows_ci_yml --> tool_ruff
 source_github_workflows_ci_yml --> tool_tee
+source_github_workflows_python_publish_yml --> tool_actions_checkout
+source_github_workflows_python_publish_yml --> tool_actions_download_artifact
+source_github_workflows_python_publish_yml --> tool_actions_setup_python
+source_github_workflows_python_publish_yml --> tool_actions_upload_artifact
+source_github_workflows_python_publish_yml --> tool_build
+source_github_workflows_python_publish_yml --> tool_pip
+source_github_workflows_python_publish_yml --> tool_pypa_gh_action_pypi_publish
+source_github_workflows_secret_scan_yml --> tool_actions_checkout
+source_github_workflows_secret_scan_yml --> tool_gitleaks_gitleaks_action
+source_scripts_install_autoconnect_service_sh --> tool_cat
+source_scripts_install_autoconnect_service_sh --> tool_connect_args_group
+source_scripts_install_autoconnect_service_sh --> tool_connect_args_keepass_entry
+source_scripts_install_autoconnect_service_sh --> tool_connect_args_keepass_profile
+source_scripts_install_autoconnect_service_sh --> tool_install
+source_scripts_install_autoconnect_service_sh --> tool_systemctl
+source_scripts_install_web_service_sh --> tool_auto_login_args_keepass_entry
+source_scripts_install_web_service_sh --> tool_auto_login_args_keepass_profile
+source_scripts_install_web_service_sh --> tool_cat
+source_scripts_install_web_service_sh --> tool_install
+source_scripts_install_web_service_sh --> tool_systemctl
+source_scripts_install_wireguard_watch_service_sh --> tool_cat
+source_scripts_install_wireguard_watch_service_sh --> tool_install
+source_scripts_install_wireguard_watch_service_sh --> tool_systemctl
 source_scripts_run_tachometer_profile_sh --> tool_run
 source_scripts_run_tachometer_profile_sh --> tool_summarize
 source_scripts_run_tachometer_profile_sh --> tool_tachometer
 note as toolingGraphSummary
-Scanned 2 tooling entrypoints.
-Detected 12 third-party tools.
+Scanned 7 tooling entrypoints.
+Detected 25 third-party tools.
 end note
 @enduml

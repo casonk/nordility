@@ -5,16 +5,41 @@ skinparam shadowing false
 skinparam defaultFontName Monospace
 skinparam componentStyle rectangle
 skinparam linetype ortho
+rectangle "scripts/install_autoconnect_service.sh\n0 local shell edges\n6 external tools" as shell_scripts_install_autoconnect_service_sh #DBEAFE
+rectangle "scripts/install_web_service.sh\n0 local shell edges\n5 external tools" as shell_scripts_install_web_service_sh #DBEAFE
+rectangle "scripts/install_wireguard_watch_service.sh\n0 local shell edges\n3 external tools" as shell_scripts_install_wireguard_watch_service_sh #DBEAFE
 rectangle "scripts/run_tachometer_profile.sh\n0 local shell edges\n3 external tools" as shell_scripts_run_tachometer_profile_sh #DBEAFE
+cloud "auto_login_args+=(--keepass-entry" as tool_auto_login_args_keepass_entry #FEF3C7
+cloud "auto_login_args+=(--keepass-profile" as tool_auto_login_args_keepass_profile #FEF3C7
+cloud "cat" as tool_cat #FEF3C7
+cloud "connect_args+=(--group" as tool_connect_args_group #FEF3C7
+cloud "connect_args+=(--keepass-entry" as tool_connect_args_keepass_entry #FEF3C7
+cloud "connect_args+=(--keepass-profile" as tool_connect_args_keepass_profile #FEF3C7
+cloud "install" as tool_install #FEF3C7
 cloud "run" as tool_run #FEF3C7
 cloud "summarize" as tool_summarize #FEF3C7
+cloud "systemctl" as tool_systemctl #FEF3C7
 cloud "tachometer" as tool_tachometer #FEF3C7
+shell_scripts_install_autoconnect_service_sh --> tool_cat
+shell_scripts_install_autoconnect_service_sh --> tool_connect_args_group
+shell_scripts_install_autoconnect_service_sh --> tool_connect_args_keepass_entry
+shell_scripts_install_autoconnect_service_sh --> tool_connect_args_keepass_profile
+shell_scripts_install_autoconnect_service_sh --> tool_install
+shell_scripts_install_autoconnect_service_sh --> tool_systemctl
+shell_scripts_install_web_service_sh --> tool_auto_login_args_keepass_entry
+shell_scripts_install_web_service_sh --> tool_auto_login_args_keepass_profile
+shell_scripts_install_web_service_sh --> tool_cat
+shell_scripts_install_web_service_sh --> tool_install
+shell_scripts_install_web_service_sh --> tool_systemctl
+shell_scripts_install_wireguard_watch_service_sh --> tool_cat
+shell_scripts_install_wireguard_watch_service_sh --> tool_install
+shell_scripts_install_wireguard_watch_service_sh --> tool_systemctl
 shell_scripts_run_tachometer_profile_sh --> tool_run
 shell_scripts_run_tachometer_profile_sh --> tool_summarize
 shell_scripts_run_tachometer_profile_sh --> tool_tachometer
 note as shellGraphSummary
-Scanned 1 shell script.
+Scanned 4 shell scripts.
 Detected 0 local shell edges.
-Detected 3 external tools.
+Detected 11 external tools.
 end note
 @enduml
