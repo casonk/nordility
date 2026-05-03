@@ -5,16 +5,16 @@
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="entry" value="Entry Surface\n• nordility CLI verbs\n• python -m nordility\n• compatibility helpers" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#1B4F72;fontColor=#111827;fontSize=14;" vertex="1" parent="1">
+        <mxCell id="entry" value="Entry Surface\n• nordility CLI verbs\n• watch-wireguard service\n• web control surface\n• python -m nordility\n• compatibility helpers" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DAE8FC;strokeColor=#1B4F72;fontColor=#111827;fontSize=14;" vertex="1" parent="1">
           <mxGeometry x="40" y="40" width="220" height="120" as="geometry" />
         </mxCell>
         <mxCell id="config" value="Configuration\n• resolve_executable()\n• resolve_backend()\n• env var overrides" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFF2CC;strokeColor=#1B4F72;fontColor=#111827;fontSize=12;" vertex="1" parent="1">
           <mxGeometry x="300" y="40" width="220" height="120" as="geometry" />
         </mxCell>
-        <mxCell id="client" value="Core Client\n• NordVPNClient\n• connect/disconnect/change\n• group pools + wait defaults" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#1B4F72;fontColor=#111827;fontSize=12;" vertex="1" parent="1">
+        <mxCell id="client" value="Core Client\n• NordVPNClient\n• connect/disconnect/change\n• WireGuard watcher starts wg0\n• localhost web controller\n• group pools + wait defaults" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#D5E8D4;strokeColor=#1B4F72;fontColor=#111827;fontSize=12;" vertex="1" parent="1">
           <mxGeometry x="560" y="40" width="220" height="120" as="geometry" />
         </mxCell>
-        <mxCell id="backend" value="Execution Backends\n• Windows: NordVPN.exe flags\n• CLI: nordvpn verbs + underscore → space" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFE6CC;strokeColor=#1B4F72;fontColor=#111827;fontSize=12;" vertex="1" parent="1">
+        <mxCell id="backend" value="Execution Backends\n• Windows: NordVPN.exe flags\n• CLI: nordvpn verbs + underscore → space\n• wg/ip repair commands" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFE6CC;strokeColor=#1B4F72;fontColor=#111827;fontSize=12;" vertex="1" parent="1">
           <mxGeometry x="820" y="40" width="220" height="120" as="geometry" />
         </mxCell>
         <mxCell id="result" value="Result + Errors\n• CommandResult\n• NordilityError propagation" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F8D7DA;strokeColor=#1B4F72;fontColor=#111827;fontSize=12;" vertex="1" parent="1">

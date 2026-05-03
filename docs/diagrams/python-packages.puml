@@ -3,9 +3,11 @@ set namespaceSeparator none
 top to bottom direction
 skinparam componentStyle rectangle
 rectangle "conftest\n1 python file" as conftest
-rectangle "src.nordility\n0 child pkg, 3 modules\n4 python files\nexamples: __main__, cli, client" as src.nordility
+rectangle "src.nordility\n0 child pkg, 4 modules\n5 python files\nexamples: __main__, cli, client" as src.nordility
 rectangle "src.nordility.__main__\n1 python file" as src.nordility.__main__
 rectangle "src.nordility.cli\n1 python file" as src.nordility.cli
 rectangle "src.nordility.client\n1 python file" as src.nordility.client
+rectangle "src.nordility.web\n1 python file" as src.nordility.web
 src.nordility --> src.nordility.client
+src.nordility.web --> src.nordility.client
 @enduml

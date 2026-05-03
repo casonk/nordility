@@ -1,21 +1,33 @@
 from nordility.client import (
     DEFAULT_WINDOWS_EXECUTABLE,
+    DEFAULT_WIREGUARD_FWMARK,
+    DEFAULT_WIREGUARD_INTERFACES,
+    DEFAULT_WIREGUARD_IP_RULE_PRIORITY,
     FAST_GROUPS,
     FULL_GROUPS,
     NordVPNClient,
+    WireGuardRestoreSummary,
     change_vpn_server,
     connect_vpn_server,
     disconnect_vpn_server,
     login_vpn_server,
+    restore_wireguard_after_nordvpn,
+    watch_nordvpn_wireguard,
 )
 
 __all__ = [
     "DEFAULT_WINDOWS_EXECUTABLE",
+    "DEFAULT_WIREGUARD_FWMARK",
+    "DEFAULT_WIREGUARD_INTERFACES",
+    "DEFAULT_WIREGUARD_IP_RULE_PRIORITY",
     "FAST_GROUPS",
     "FULL_GROUPS",
     "NordVPNClient",
+    "WireGuardRestoreSummary",
     "change_vpn_server",
     "connect_vpn_server",
     "disconnect_vpn_server",
     "login_vpn_server",
+    "restore_wireguard_after_nordvpn",
+    "watch_nordvpn_wireguard",
 ]
