@@ -20,7 +20,7 @@ skinparam DefaultTextAlignment left
 skinparam LegendFontSize 14
 
 package "Entry Surface" as ENTRY_PANEL #F5F5F5 {
-  rectangle "CLI\nsrc/nordility/cli.py\n- argparse verbs: connect/disconnect/change/list-groups\n- logging setup\n- stdout/stderr + exit codes" as CLI #DAE8FC
+  rectangle "CLI\nsrc/nordility/cli.py\n- argparse verbs: connect/disconnect/change/watch-wireguard/web/list-groups\n- logging setup\n- stdout/stderr + exit codes" as CLI #DAE8FC
   rectangle "Module Entry\nsrc/nordility/__main__.py\n- python -m nordility" as MOD #DAE8FC
   rectangle "Public Package Surface\nsrc/nordility/__init__.py\n- re-exports NordVPNClient\n- compatibility helpers" as API #DAE8FC
 }
@@ -29,6 +29,11 @@ package "Configuration + Core Client" as CORE_PANEL #F5F5F5 {
   rectangle "Configuration Resolution\nresolve_executable()\n- explicit arg\n- NORDILITY_EXECUTABLE\n- NORDVPN_EXECUTABLE\n- default Windows path\n\nresolve_backend()\n- auto / windows / cli\n- NORDILITY_BACKEND override" as CONFIG #D5E8D4
 
   rectangle "NordVPNClient\n- connect / disconnect / change\n- list_groups / pick_group\n- build command tuples\n- dispatch to backend\n- inject launcher / runner / sleeper / rng" as CLIENT #D5E8D4
+
+  rectangle "WireGuard Watcher\nwatch_nordvpn_wireguard()\n- poll nordvpn status + nordlynx state\n- detect route/fwmark drift\n- repair user-managed WireGuard only" as WATCH #D5E8D4
+  rectangle "WireGuard Watcher\nwatch_nordvpn_wireguard()\n- poll nordvpn status + nordlynx state\n- start configured wg0 if down\n- repair user-managed WireGuard only" as WATCH #D5E8D4
+
+  rectangle "Web Control\nsrc/nordility/web.py\n- localhost HTTP server\n- Safari/Caddy actions\n- power / rotate / group select" as WEB #D5E8D4
 
   rectangle "Group Pools\nFAST_GROUPS / FULL_GROUPS\n- underscore-separated names\n- fast/full selection" as GROUPS #D5E8D4
 
@@ -47,21 +52,32 @@ package "Testing" as TEST_PANEL #F5F5F5 {
 
 MOD --> CLI
 CLI --> CLIENT : parsed subcommands
+CLI --> WATCH : watch-wireguard
+CLI --> WEB : web
 API --> CLIENT : wrapper calls
 CONFIG --> CLIENT : executable + backend
+CONFIG --> WATCH : executable + backend
+CONFIG --> WEB : executable + backend
 GROUPS --> CLIENT : fast/full pools
+GROUPS --> WEB : group select
 CLIENT --> WIN : backend=windows
 CLIENT --> CLIBACK : backend=cli
+WATCH --> CLIBACK : backend=cli
+WEB --> CLIBACK : backend=cli
 WIN --> RESULT : launch result or error
 CLIBACK --> RESULT : completed process or error
 RESULT --> CLI : print message / exit status
 TESTS ..> CLIENT : inject fakes
+TESTS ..> WATCH
+TESTS ..> WEB
 TESTS ..> CONFIG
 TESTS ..> GROUPS
 
 legend right
   == Primary Flows ==
   CLI: argparse -> NordVPNClient -> backend command -> message/exit code
+  Watcher: argparse/systemd -> watch-wireguard -> WireGuard route repair
+  Web: Safari/Caddy -> localhost web -> NordVPNClient -> WireGuard repair
   Python API: helper -> NordVPNClient -> CommandResult or legacy status string
 
   == Key Commands ==

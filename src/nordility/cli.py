@@ -9,9 +9,14 @@ from pathlib import Path
 from nordility.client import (
     DEFAULT_KEEPASS_ENTRY,
     DEFAULT_KEEPASS_PROFILE,
+    DEFAULT_WIREGUARD_FWMARK,
+    DEFAULT_WIREGUARD_INTERFACES,
+    DEFAULT_WIREGUARD_IP_RULE_PRIORITY,
     NordilityError,
     NordVPNClient,
+    watch_nordvpn_wireguard,
 )
+from nordility.web import DEFAULT_WEB_HOST, DEFAULT_WEB_PORT, run_web_server
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _AUTO_PASS_CONFIG_PATH = _REPO_ROOT / "config" / "auto-pass.ini"
@@ -176,12 +181,123 @@ def build_parser() -> argparse.ArgumentParser:
     change_parser.add_argument(
         "--wireguard-fwmark",
         type=int,
-        default=51820,
+        default=DEFAULT_WIREGUARD_FWMARK,
         metavar="FWMARK",
         help=(
             "Socket fwmark value used by the WireGuard interface (decimal). "
             "Used with --restore-wireguard on Linux to re-apply the ip routing rule. "
-            "Default: 51820 (0xca54)."
+            f"Default: {DEFAULT_WIREGUARD_FWMARK} ({hex(DEFAULT_WIREGUARD_FWMARK)})."
+        ),
+    )
+
+    watch_parser = subparsers.add_parser(
+        "watch-wireguard",
+        help="Watch NordVPN state and repair WireGuard routing for private access.",
+    )
+    watch_parser.add_argument(
+        "--interval",
+        type=float,
+        default=5,
+        help="Seconds between NordVPN/WireGuard state checks. Default: 5.",
+    )
+    watch_parser.add_argument(
+        "--stabilize-wait",
+        type=float,
+        default=2,
+        help="Seconds to wait after a NordVPN state change before repairing. Default: 2.",
+    )
+    watch_parser.add_argument(
+        "--once",
+        action="store_true",
+        help="Run one immediate repair pass and exit.",
+    )
+    watch_parser.add_argument(
+        "--wireguard-interface",
+        action="append",
+        dest="wireguard_interfaces",
+        metavar="IFACE",
+        help=(
+            "Configured WireGuard interface to start if it is down. "
+            f"Can be repeated. Default: {', '.join(DEFAULT_WIREGUARD_INTERFACES)}."
+        ),
+    )
+    watch_parser.add_argument(
+        "--wireguard-fwmark",
+        type=int,
+        default=DEFAULT_WIREGUARD_FWMARK,
+        metavar="FWMARK",
+        help=(
+            "Socket fwmark value used by user-managed WireGuard interfaces. "
+            f"Default: {DEFAULT_WIREGUARD_FWMARK} ({hex(DEFAULT_WIREGUARD_FWMARK)})."
+        ),
+    )
+    watch_parser.add_argument(
+        "--ip-rule-priority",
+        type=int,
+        default=DEFAULT_WIREGUARD_IP_RULE_PRIORITY,
+        metavar="PRIORITY",
+        help=(
+            "Priority for the 'fwmark FWMARK lookup main' rule. "
+            f"Default: {DEFAULT_WIREGUARD_IP_RULE_PRIORITY}."
+        ),
+    )
+
+    web_parser = subparsers.add_parser(
+        "web",
+        help="Run the local Nordility web control surface.",
+    )
+    web_parser.add_argument(
+        "--host",
+        default=DEFAULT_WEB_HOST,
+        help=f"Bind host. Default: {DEFAULT_WEB_HOST}.",
+    )
+    web_parser.add_argument(
+        "--port",
+        type=int,
+        default=DEFAULT_WEB_PORT,
+        help=f"Bind port. Default: {DEFAULT_WEB_PORT}.",
+    )
+    web_parser.add_argument(
+        "--wireguard-interface",
+        action="append",
+        dest="wireguard_interfaces",
+        metavar="IFACE",
+        help=(
+            "Configured WireGuard interface to start after VPN actions if it is down. "
+            f"Can be repeated. Default: {', '.join(DEFAULT_WIREGUARD_INTERFACES)}."
+        ),
+    )
+    web_parser.add_argument(
+        "--wireguard-fwmark",
+        type=int,
+        default=DEFAULT_WIREGUARD_FWMARK,
+        metavar="FWMARK",
+        help=f"WireGuard socket fwmark. Default: {DEFAULT_WIREGUARD_FWMARK}.",
+    )
+    web_parser.add_argument(
+        "--ip-rule-priority",
+        type=int,
+        default=DEFAULT_WIREGUARD_IP_RULE_PRIORITY,
+        metavar="PRIORITY",
+        help=f"Policy-routing rule priority. Default: {DEFAULT_WIREGUARD_IP_RULE_PRIORITY}.",
+    )
+    web_parser.add_argument(
+        "--auto-login",
+        action="store_true",
+        help="If the client is logged out, re-authenticate via KeePass before VPN actions.",
+    )
+    web_parser.add_argument(
+        "--keepass-entry",
+        default=keepass_entry_default,
+        metavar="ENTRY",
+        help=f"KeePassXC entry to use for auto-login. Default: {keepass_entry_default}",
+    )
+    web_parser.add_argument(
+        "--keepass-profile",
+        default=keepass_profile_default,
+        help=(
+            "auto-pass profile to use when resolving --keepass-entry. "
+            f"Default: {keepass_profile_default}"
         ),
     )
 
@@ -238,6 +354,23 @@ def main(argv: list[str] | None = None) -> int:
                 wireguard_fwmark=args.wireguard_fwmark,
             )
             print(result.message)
+            return 0
+        if args.command == "watch-wireguard":
+            events = watch_nordvpn_wireguard(
+                executable=client.executable,
+                backend=client.backend,
+                interval_seconds=args.interval,
+                stabilize_seconds=args.stabilize_wait,
+                fwmark=args.wireguard_fwmark,
+                ip_rule_priority=args.ip_rule_priority,
+                ensure_interfaces=tuple(args.wireguard_interfaces or DEFAULT_WIREGUARD_INTERFACES),
+                once=args.once,
+            )
+            if args.once:
+                print(events[-1].describe() if events else "No WireGuard action taken")
+            return 0
+        if args.command == "web":
+            run_web_server(args)
             return 0
         if args.command == "list-groups":
             for group in client.list_groups(speed=args.speed):

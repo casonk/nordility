@@ -34,6 +34,8 @@ tags = ["local-path", "machine-specific"]
 # Flag only config/data/script paths where real leaks happen.
 [rules.allowlist]
 paths = [
+  # The baseline file intentionally records known findings — never scan it.
+  '''\.gitleaks-baseline\.json$''',
   '''.*\.md$''',
   '''.*\.rst$''',
   '''.*\.txt$''',

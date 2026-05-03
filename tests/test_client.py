@@ -1,5 +1,7 @@
 import random
+import tempfile
 import unittest
+from pathlib import Path
 from subprocess import CompletedProcess
 from unittest import mock
 
@@ -10,10 +12,13 @@ from nordility.client import (
     _discover_wireguard_interfaces,
     _get_wireguard_peer_endpoints,
     _is_not_logged_in,
+    _nordvpn_connection_signature,
     _refresh_wireguard_peers,
     _restore_wireguard_routing,
     resolve_backend,
     resolve_executable,
+    restore_wireguard_after_nordvpn,
+    watch_nordvpn_wireguard,
 )
 
 
@@ -596,6 +601,179 @@ class WireGuardRoutingRestoreTests(unittest.TestCase):
 
         self.assertNotIn("routing restored", result.message)
         self.assertNotIn(("ip", "rule", "show"), calls)
+
+
+class WireGuardWatchTests(unittest.TestCase):
+    def test_nordvpn_signature_ignores_dynamic_status_lines(self) -> None:
+        status_outputs = iter(
+            [
+                "Status: Connected\nHostname: us1.nordvpn.com\nUptime: 1 second\nTransfer: 1 KiB\n",
+                "Status: Connected\nHostname: us1.nordvpn.com\nUptime: 2 seconds\nTransfer: 2 KiB\n",
+            ]
+        )
+
+        def runner(command, capture_output, text, check):
+            key = tuple(command)
+            if key == ("nordvpn", "status"):
+                return CompletedProcess(command, 0, stdout=next(status_outputs), stderr="")
+            if key == ("wg", "show", "nordlynx", "endpoints"):
+                return CompletedProcess(command, 0, stdout="NORD\t198.51.100.1:51820\n", stderr="")
+            if key == ("wg", "show", "nordlynx", "fwmark"):
+                return CompletedProcess(command, 0, stdout="0xe1f1\n", stderr="")
+            return CompletedProcess(command, 0, stdout="", stderr="")
+
+        self.assertEqual(
+            _nordvpn_connection_signature(runner),
+            _nordvpn_connection_signature(runner),
+        )
+
+    def test_restore_after_nordvpn_filters_routing_to_user_managed_interfaces(self) -> None:
+        calls: list[tuple] = []
+
+        def runner(command, capture_output, text, check):
+            calls.append(tuple(command))
+            key = tuple(command)
+            if key == ("wg", "show", "interfaces"):
+                return CompletedProcess(command, 0, stdout="wg0 nordlynx\n", stderr="")
+            if key == ("wg", "show", "wg0", "endpoints"):
+                return CompletedProcess(command, 0, stdout="WG0\t10.99.0.2:51820\n", stderr="")
+            if key == ("wg", "show", "nordlynx", "endpoints"):
+                return CompletedProcess(command, 0, stdout="NORD\t198.51.100.1:51820\n", stderr="")
+            if key == ("ip", "rule", "show"):
+                return CompletedProcess(command, 0, stdout="", stderr="")
+            return CompletedProcess(command, 0, stdout="", stderr="")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            config_dir = Path(tmp)
+            (config_dir / "wg0.conf").write_text("[Interface]\n", encoding="utf-8")
+
+            summary = restore_wireguard_after_nordvpn(
+                runner,
+                backend="cli",
+                wireguard_config_dir=config_dir,
+            )
+
+        self.assertEqual(summary.routing_candidates, ("wg0",))
+        self.assertEqual(summary.routing_restored, ("wg0",))
+        self.assertIn(("wg", "set", "wg0", "fwmark", "51820"), calls)
+        self.assertNotIn(("wg", "set", "nordlynx", "fwmark", "51820"), calls)
+
+    def test_watch_starts_configured_wireguard_interface_when_down(self) -> None:
+        calls: list[tuple] = []
+        active_interfaces = ""
+
+        def runner(command, capture_output, text, check):
+            nonlocal active_interfaces
+            calls.append(tuple(command))
+            key = tuple(command)
+            if key == ("wg", "show", "interfaces"):
+                return CompletedProcess(command, 0, stdout=active_interfaces, stderr="")
+            if key == ("systemctl", "start", "wg-quick@wg0.service"):
+                active_interfaces = "wg0\n"
+                return CompletedProcess(command, 0, stdout="", stderr="")
+            if key == ("wg", "show", "wg0", "endpoints"):
+                return CompletedProcess(command, 0, stdout="WG0\t10.99.0.2:51820\n", stderr="")
+            if key == ("ip", "rule", "show"):
+                return CompletedProcess(command, 0, stdout="", stderr="")
+            return CompletedProcess(command, 0, stdout="", stderr="")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            config_dir = Path(tmp)
+            (config_dir / "wg0.conf").write_text("[Interface]\n", encoding="utf-8")
+
+            events = watch_nordvpn_wireguard(
+                runner=runner,
+                sleeper=lambda _: None,
+                wireguard_config_dir=config_dir,
+                once=True,
+            )
+
+        self.assertEqual(events[0].started, ("wg0",))
+        self.assertIn(("systemctl", "start", "wg-quick@wg0.service"), calls)
+        self.assertIn(("wg", "set", "wg0", "fwmark", "51820"), calls)
+
+    def test_watch_retries_start_when_configured_interface_stays_down(self) -> None:
+        calls: list[tuple] = []
+
+        def runner(command, capture_output, text, check):
+            calls.append(tuple(command))
+            key = tuple(command)
+            if key == ("nordvpn", "status"):
+                return CompletedProcess(command, 0, stdout="Status: Disconnected\n", stderr="")
+            if key == ("wg", "show", "interfaces"):
+                return CompletedProcess(command, 0, stdout="", stderr="")
+            if key == ("wg", "show", "nordlynx", "endpoints"):
+                return CompletedProcess(command, 0, stdout="", stderr="")
+            if key == ("wg", "show", "nordlynx", "fwmark"):
+                return CompletedProcess(command, 0, stdout="", stderr="")
+            if key == ("systemctl", "start", "wg-quick@wg0.service"):
+                return CompletedProcess(command, 1, stdout="", stderr="failed")
+            if key == ("sudo", "-n", "systemctl", "start", "wg-quick@wg0.service"):
+                return CompletedProcess(command, 1, stdout="", stderr="failed")
+            if key == ("wg-quick", "up", "wg0"):
+                return CompletedProcess(command, 1, stdout="", stderr="failed")
+            if key == ("sudo", "-n", "wg-quick", "up", "wg0"):
+                return CompletedProcess(command, 1, stdout="", stderr="failed")
+            return CompletedProcess(command, 0, stdout="", stderr="")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            config_dir = Path(tmp)
+            (config_dir / "wg0.conf").write_text("[Interface]\n", encoding="utf-8")
+
+            events = watch_nordvpn_wireguard(
+                runner=runner,
+                sleeper=lambda _: None,
+                interval_seconds=1,
+                stabilize_seconds=0,
+                wireguard_config_dir=config_dir,
+                max_iterations=1,
+            )
+
+        self.assertEqual(len(events), 2)
+        self.assertEqual(calls.count(("systemctl", "start", "wg-quick@wg0.service")), 2)
+
+    def test_watch_reapplies_when_nordvpn_signature_changes(self) -> None:
+        calls: list[tuple] = []
+        status_outputs = iter(
+            [
+                "Status: Connected\nHostname: old.nordvpn.com\n",
+                "Status: Connected\nHostname: new.nordvpn.com\n",
+                "Status: Connected\nHostname: new.nordvpn.com\n",
+            ]
+        )
+
+        def runner(command, capture_output, text, check):
+            calls.append(tuple(command))
+            key = tuple(command)
+            if key == ("nordvpn", "status"):
+                return CompletedProcess(command, 0, stdout=next(status_outputs), stderr="")
+            if key == ("wg", "show", "interfaces"):
+                return CompletedProcess(command, 0, stdout="wg0\n", stderr="")
+            if key == ("wg", "show", "wg0", "endpoints"):
+                return CompletedProcess(command, 0, stdout="WG0\t10.99.0.2:51820\n", stderr="")
+            if key == ("wg", "show", "nordlynx", "endpoints"):
+                return CompletedProcess(command, 0, stdout="NORD\t198.51.100.1:51820\n", stderr="")
+            if key == ("wg", "show", "nordlynx", "fwmark"):
+                return CompletedProcess(command, 0, stdout="0xe1f1\n", stderr="")
+            if key == ("ip", "rule", "show"):
+                return CompletedProcess(command, 0, stdout="", stderr="")
+            return CompletedProcess(command, 0, stdout="", stderr="")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            config_dir = Path(tmp)
+            (config_dir / "wg0.conf").write_text("[Interface]\n", encoding="utf-8")
+
+            events = watch_nordvpn_wireguard(
+                runner=runner,
+                sleeper=lambda _: None,
+                interval_seconds=1,
+                stabilize_seconds=0,
+                wireguard_config_dir=config_dir,
+                max_iterations=1,
+            )
+
+        self.assertEqual(len(events), 2)
+        self.assertEqual(calls.count(("wg", "set", "wg0", "fwmark", "51820")), 2)
 
 
 if __name__ == "__main__":
