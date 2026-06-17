@@ -11,6 +11,8 @@ repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.9
     hooks:
+      - id: ruff
+        args: [--fix]
       - id: ruff-format
         name: ruff-format (preferred formatter)
   # TODO: remove black hook once ruff-format is confirmed stable portfolio-wide
