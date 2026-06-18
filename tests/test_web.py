@@ -47,7 +47,7 @@ class NordilityWebControllerTests(unittest.TestCase):
             runner=runner,
             auto_login=True,
             keepass_entry="vpn/token",
-            keepass_profile="infra",
+            keepass_profile="mock-profile",
         )
 
         def connect(**kwargs):
@@ -60,7 +60,7 @@ class NordilityWebControllerTests(unittest.TestCase):
 
         self.assertTrue(captured["auto_login"])
         self.assertEqual(captured["keepass_entry"], "vpn/token")
-        self.assertEqual(captured["keepass_profile"], "infra")
+        self.assertEqual(captured["keepass_profile"], "mock-profile")
 
     def test_disconnect_starts_wireguard_and_repairs_routing(self) -> None:
         calls: list[tuple] = []

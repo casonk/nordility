@@ -121,7 +121,7 @@ ENTRY_NOT_FOUND_MARKERS = (
 
 _AUTO_PASS_ROOT = Path(__file__).resolve().parent.parent.parent.parent / "auto-pass"
 DEFAULT_KEEPASS_ENTRY = "vpn/provider#access-token"
-DEFAULT_KEEPASS_PROFILE = "infra"
+DEFAULT_KEEPASS_PROFILE = ""
 DEFAULT_WIREGUARD_FWMARK = 51820
 DEFAULT_WIREGUARD_IP_RULE_PRIORITY = 100
 DEFAULT_WIREGUARD_INTERFACES = ("wg0",)
@@ -159,7 +159,8 @@ def _resolve_keepass_token(
     """Resolve the NordVPN access token from a KeePassXC entry via auto-pass.
 
     Reads the ``Password`` field of the entry. By default the entry is
-    ``vpn/provider#access-token`` from the ``infra`` profile.
+    ``vpn/provider#access-token``; set ``keepass_profile`` or configure
+    ``config/auto-pass.ini`` to specify the KeePass vault profile.
     """
     _src = str(_AUTO_PASS_ROOT / "src")
     if _src not in sys.path:
