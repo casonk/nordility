@@ -49,6 +49,20 @@ paths = [
 ]
 
 [[rules]]
+id = "keepass-real-profile-name"
+description = "Real KeePass profile name committed to a config or example file"
+regex = '''profile\s*=\s*["']?(infra|personal|finance|master)["']?'''
+tags = ["keepass", "sensitive-config"]
+# Skip docs and baseline — flag only config, example, and env files.
+[rules.allowlist]
+paths = [
+  '''.*\.gitleaks-baseline\.json$''',
+  '''.*\.md$''',
+  '''.*\.rst$''',
+  '''.*\.txt$''',
+]
+
+[[rules]]
 id = "tachometer-notify-target-phone"
 description = "Tachometer [notify] target field with a committed US phone number"
 regex = '''target\s*=\s*"\+1[2-9]\d{9}'''
