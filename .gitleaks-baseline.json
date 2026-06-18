@@ -1,1 +1,146 @@
-[]
+[
+ {
+  "RuleID": "keepass-real-profile-name",
+  "Description": "Real KeePass profile name committed to a config or example file",
+  "StartLine": 5,
+  "EndLine": 5,
+  "StartColumn": 2,
+  "EndColumn": 16,
+  "Match": "profile = infra",
+  "Secret": "infra",
+  "File": "config/auto-pass.example.ini",
+  "SymlinkFile": "",
+  "Commit": "838ca9b21a706d666a0f51145f419c012027e440",
+  "Link": "https://github.com/casonk/nordility/blob/838ca9b21a706d666a0f51145f419c012027e440/config/auto-pass.example.ini#L5",
+  "Entropy": 2.321928,
+  "Author": "casonk",
+  "Email": "72440835+casonk@users.noreply.github.com",
+  "Date": "2026-04-03T23:52:25Z",
+  "Message": "feat: add repo-local auto-pass defaults",
+  "Tags": [
+   "keepass",
+   "sensitive-config"
+  ],
+  "Fingerprint": "838ca9b21a706d666a0f51145f419c012027e440:config/auto-pass.example.ini:keepass-real-profile-name:5"
+ },
+ {
+  "RuleID": "keepass-real-profile-name",
+  "Description": "Real KeePass profile name committed to a config or example file",
+  "StartLine": 34,
+  "EndLine": 34,
+  "StartColumn": 22,
+  "EndColumn": 36,
+  "Match": "profile=\"infra\"",
+  "Secret": "infra",
+  "File": "tests/test_cli.py",
+  "SymlinkFile": "",
+  "Commit": "838ca9b21a706d666a0f51145f419c012027e440",
+  "Link": "https://github.com/casonk/nordility/blob/838ca9b21a706d666a0f51145f419c012027e440/tests/test_cli.py#L34",
+  "Entropy": 2.321928,
+  "Author": "casonk",
+  "Email": "72440835+casonk@users.noreply.github.com",
+  "Date": "2026-04-03T23:52:25Z",
+  "Message": "feat: add repo-local auto-pass defaults",
+  "Tags": [
+   "keepass",
+   "sensitive-config"
+  ],
+  "Fingerprint": "838ca9b21a706d666a0f51145f419c012027e440:tests/test_cli.py:keepass-real-profile-name:34"
+ },
+ {
+  "RuleID": "keepass-real-profile-name",
+  "Description": "Real KeePass profile name committed to a config or example file",
+  "StartLine": 89,
+  "EndLine": 89,
+  "StartColumn": 22,
+  "EndColumn": 36,
+  "Match": "profile=\"infra\"",
+  "Secret": "infra",
+  "File": "tests/test_cli.py",
+  "SymlinkFile": "",
+  "Commit": "838ca9b21a706d666a0f51145f419c012027e440",
+  "Link": "https://github.com/casonk/nordility/blob/838ca9b21a706d666a0f51145f419c012027e440/tests/test_cli.py#L89",
+  "Entropy": 2.321928,
+  "Author": "casonk",
+  "Email": "72440835+casonk@users.noreply.github.com",
+  "Date": "2026-04-03T23:52:25Z",
+  "Message": "feat: add repo-local auto-pass defaults",
+  "Tags": [
+   "keepass",
+   "sensitive-config"
+  ],
+  "Fingerprint": "838ca9b21a706d666a0f51145f419c012027e440:tests/test_cli.py:keepass-real-profile-name:89"
+ },
+ {
+  "RuleID": "keepass-real-profile-name",
+  "Description": "Real KeePass profile name committed to a config or example file",
+  "StartLine": 107,
+  "EndLine": 107,
+  "StartColumn": 22,
+  "EndColumn": 36,
+  "Match": "profile=\"infra\"",
+  "Secret": "infra",
+  "File": "tests/test_cli.py",
+  "SymlinkFile": "",
+  "Commit": "838ca9b21a706d666a0f51145f419c012027e440",
+  "Link": "https://github.com/casonk/nordility/blob/838ca9b21a706d666a0f51145f419c012027e440/tests/test_cli.py#L107",
+  "Entropy": 2.321928,
+  "Author": "casonk",
+  "Email": "72440835+casonk@users.noreply.github.com",
+  "Date": "2026-04-03T23:52:25Z",
+  "Message": "feat: add repo-local auto-pass defaults",
+  "Tags": [
+   "keepass",
+   "sensitive-config"
+  ],
+  "Fingerprint": "838ca9b21a706d666a0f51145f419c012027e440:tests/test_cli.py:keepass-real-profile-name:107"
+ },
+ {
+  "RuleID": "keepass-real-profile-name",
+  "Description": "Real KeePass profile name committed to a config or example file",
+  "StartLine": 127,
+  "EndLine": 127,
+  "StartColumn": 22,
+  "EndColumn": 36,
+  "Match": "profile=\"infra\"",
+  "Secret": "infra",
+  "File": "tests/test_cli.py",
+  "SymlinkFile": "",
+  "Commit": "838ca9b21a706d666a0f51145f419c012027e440",
+  "Link": "https://github.com/casonk/nordility/blob/838ca9b21a706d666a0f51145f419c012027e440/tests/test_cli.py#L127",
+  "Entropy": 2.321928,
+  "Author": "casonk",
+  "Email": "72440835+casonk@users.noreply.github.com",
+  "Date": "2026-04-03T23:52:25Z",
+  "Message": "feat: add repo-local auto-pass defaults",
+  "Tags": [
+   "keepass",
+   "sensitive-config"
+  ],
+  "Fingerprint": "838ca9b21a706d666a0f51145f419c012027e440:tests/test_cli.py:keepass-real-profile-name:127"
+ },
+ {
+  "RuleID": "keepass-real-profile-name",
+  "Description": "Real KeePass profile name committed to a config or example file",
+  "StartLine": 50,
+  "EndLine": 50,
+  "StartColumn": 22,
+  "EndColumn": 36,
+  "Match": "profile=\"infra\"",
+  "Secret": "infra",
+  "File": "tests/test_web.py",
+  "SymlinkFile": "",
+  "Commit": "14a255e9470617dfe0ff1f339e47d58e3c389511",
+  "Link": "https://github.com/casonk/nordility/blob/14a255e9470617dfe0ff1f339e47d58e3c389511/tests/test_web.py#L50",
+  "Entropy": 2.321928,
+  "Author": "casonk",
+  "Email": "72440835+casonk@users.noreply.github.com",
+  "Date": "2026-05-03T14:29:58Z",
+  "Message": "feat: add watch-wireguard service and localhost web control surface\n\nAdd nordility watch-wireguard to detect NordVPN reconnects and repair\nWireGuard policy routing, plus nordility web for iPhone/Safari-accessible\nVPN control behind wiring-harness Caddy/mTLS. Include systemd installer\nscripts, test coverage, updated docs/CHANGELOG, and diagram refreshes.\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>",
+  "Tags": [
+   "keepass",
+   "sensitive-config"
+  ],
+  "Fingerprint": "14a255e9470617dfe0ff1f339e47d58e3c389511:tests/test_web.py:keepass-real-profile-name:50"
+ }
+]

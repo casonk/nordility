@@ -9,7 +9,7 @@ from nordility.client import (
     WireGuardRestoreSummary,
 )
 
-_DEFAULT_KEEPASS_DEFAULTS = ("infra", DEFAULT_KEEPASS_ENTRY)
+_DEFAULT_KEEPASS_DEFAULTS = ("", DEFAULT_KEEPASS_ENTRY)
 
 
 class CLITests(TestCase):
@@ -38,7 +38,7 @@ class CLITests(TestCase):
             wait_seconds=0,
             auto_login=False,
             keepass_entry=DEFAULT_KEEPASS_ENTRY,
-            keepass_profile="infra",
+            keepass_profile="",
         )
 
     @mock.patch("nordility.cli.NordVPNClient")
@@ -99,7 +99,7 @@ class CLITests(TestCase):
         mock_client.login.assert_called_once_with(
             token="tok",
             keepass_entry=None,
-            keepass_profile="infra",
+            keepass_profile="",
         )
 
     @mock.patch("nordility.cli.NordVPNClient")
@@ -119,7 +119,7 @@ class CLITests(TestCase):
         mock_client.login.assert_called_once_with(
             token=None,
             keepass_entry=DEFAULT_KEEPASS_ENTRY,
-            keepass_profile="infra",
+            keepass_profile="",
         )
 
     @mock.patch("nordility.cli.NordVPNClient")
@@ -141,7 +141,7 @@ class CLITests(TestCase):
             wait_seconds=0,
             auto_login=True,
             keepass_entry=DEFAULT_KEEPASS_ENTRY,
-            keepass_profile="infra",
+            keepass_profile="",
         )
 
     @mock.patch("nordility.cli.NordVPNClient")
@@ -277,7 +277,7 @@ class CLITests(TestCase):
         args = mock_run_web_server.call_args.args[0]
         self.assertTrue(args.auto_login)
         self.assertEqual(args.keepass_entry, DEFAULT_KEEPASS_ENTRY)
-        self.assertEqual(args.keepass_profile, "infra")
+        self.assertEqual(args.keepass_profile, "")
 
     @mock.patch("nordility.cli.NordVPNClient")
     def test_repo_auto_pass_config_overrides_cli_defaults(self, mock_client_cls) -> None:
