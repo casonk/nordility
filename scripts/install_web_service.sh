@@ -3,18 +3,19 @@
 
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SCRIPT_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -P "${SCRIPT_DIR}/.." && pwd)"
+# shellcheck source=scripts/lib/install_runtime.sh
+source "${SCRIPT_DIR}/lib/install_runtime.sh"
 UNIT_NAME="nordility-web.service"
 UNIT_DIR="/etc/systemd/system"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
-HOST="127.0.0.1"
-PORT="5300"
+SOCKET_PATH="/run/nordility/web.sock"
+SOCKET_GROUP="caddy"
+TRUSTED_ORIGIN="https://nordility.clockwork.internal"
 WIREGUARD_INTERFACE="wg0"
 WIREGUARD_FWMARK="51820"
 IP_RULE_PRIORITY="100"
-KEEPASS_PROFILE="${KEEPASS_PROFILE:-}"
-KEEPASS_ENTRY="${KEEPASS_ENTRY:-}"
-AUTO_LOGIN=1
 RENDER_ONLY=0
 ENABLE_NOW=1
 
@@ -22,23 +23,19 @@ usage() {
   cat <<'EOF'
 Usage: install_web_service.sh [options]
 
-Install a systemd service that runs the local Nordility web control surface.
-The service binds to 127.0.0.1 and is intended to be exposed through the
-wiring-harness shared Caddy/mTLS entrypoint.
+Install a systemd service that runs the local Nordility web control surface on
+a root-owned Unix socket for the wiring-harness shared Caddy/mTLS entrypoint.
 
 Options:
   --render-only                 Print the service unit instead of installing it.
   --no-enable                   Install the unit without enabling/starting it.
   --unit-dir DIR                Target systemd unit directory. Default: /etc/systemd/system
   --python-bin PATH             Python executable for ExecStart. Default: python3
-  --host HOST                   Bind host. Default: 127.0.0.1
-  --port PORT                   Bind port. Default: 5300
+  --trusted-origin ORIGIN       Exact HTTPS Caddy origin allowed to mutate state.
+                                Default: https://nordility.clockwork.internal
   --wireguard-interface IFACE   Interface to start after VPN actions if down. Default: wg0
   --wireguard-fwmark FWMARK     WireGuard socket fwmark. Default: 51820
   --ip-rule-priority PRIORITY   Policy-routing rule priority. Default: 100
-  --no-auto-login               Do not use auto-pass/KeePass to recover a logged-out client.
-  --keepass-profile PROFILE     Override the auto-pass profile for NordVPN token lookup.
-  --keepass-entry ENTRY         Override the KeePassXC entry for NordVPN token lookup.
   --help                        Show this help text.
 
 Typical flow:
@@ -70,12 +67,8 @@ while [[ $# -gt 0 ]]; do
       PYTHON_BIN="$2"
       shift 2
       ;;
-    --host)
-      HOST="$2"
-      shift 2
-      ;;
-    --port)
-      PORT="$2"
+    --trusted-origin)
+      TRUSTED_ORIGIN="$2"
       shift 2
       ;;
     --wireguard-interface)
@@ -90,18 +83,6 @@ while [[ $# -gt 0 ]]; do
       IP_RULE_PRIORITY="$2"
       shift 2
       ;;
-    --no-auto-login)
-      AUTO_LOGIN=0
-      shift
-      ;;
-    --keepass-profile)
-      KEEPASS_PROFILE="$2"
-      shift 2
-      ;;
-    --keepass-entry)
-      KEEPASS_ENTRY="$2"
-      shift 2
-      ;;
     --help|-h)
       usage
       exit 0
@@ -113,28 +94,23 @@ while [[ $# -gt 0 ]]; do
 done
 
 render_unit() {
-  local auto_login_args=()
-  if (( AUTO_LOGIN == 1 )); then
-    auto_login_args=(--auto-login)
-    if [[ -n "${KEEPASS_ENTRY}" ]]; then
-      auto_login_args+=(--keepass-entry "${KEEPASS_ENTRY}")
-    fi
-    if [[ -n "${KEEPASS_PROFILE}" ]]; then
-      auto_login_args+=(--keepass-profile "${KEEPASS_PROFILE}")
-    fi
-  fi
   cat <<EOF
 [Unit]
 Description=Nordility web control surface
-Documentation=file://${REPO_ROOT}/README.md
+Documentation=https://github.com/casonk/nordility
 Wants=network-online.target
 After=network-online.target nordvpnd.service wg-quick@wg0.service nordility-wireguard-watch.service
 
 [Service]
 Type=simple
-WorkingDirectory=${REPO_ROOT}
-Environment=PYTHONPATH=${REPO_ROOT}/src
-ExecStart=${PYTHON_BIN} -m nordility --backend cli web --host ${HOST} --port ${PORT} --wireguard-interface ${WIREGUARD_INTERFACE} --wireguard-fwmark ${WIREGUARD_FWMARK} --ip-rule-priority ${IP_RULE_PRIORITY}${auto_login_args[*]:+ ${auto_login_args[*]}}
+Group=${SOCKET_GROUP}
+RuntimeDirectory=nordility
+RuntimeDirectoryMode=0750
+UMask=0007
+WorkingDirectory=${NORDILITY_RUNTIME_ROOT}
+Environment=PYTHONPATH=${NORDILITY_RUNTIME_SOURCE_ROOT}
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=${PYTHON_BIN} -m nordility --backend cli web --unix-socket ${SOCKET_PATH} --trusted-origin ${TRUSTED_ORIGIN} --wireguard-interface ${WIREGUARD_INTERFACE} --wireguard-fwmark ${WIREGUARD_FWMARK} --ip-rule-priority ${IP_RULE_PRIORITY}
 Restart=always
 RestartSec=5
 
@@ -143,13 +119,28 @@ WantedBy=multi-user.target
 EOF
 }
 
+nordility_require_single_line "unit directory" "${UNIT_DIR}"
+nordility_require_single_line "web socket" "${SOCKET_PATH}"
+nordility_require_single_line "web socket group" "${SOCKET_GROUP}"
+nordility_require_single_line "trusted web origin" "${TRUSTED_ORIGIN}"
+nordility_require_single_line "WireGuard interface" "${WIREGUARD_INTERFACE}"
+nordility_require_single_line "WireGuard fwmark" "${WIREGUARD_FWMARK}"
+nordility_require_single_line "ip rule priority" "${IP_RULE_PRIORITY}"
+[[ "${TRUSTED_ORIGIN}" =~ ^https://[A-Za-z0-9.-]+(:[0-9]+)?$ ]] || \
+  fail "trusted web origin must be one HTTPS origin without a path"
+
 if (( RENDER_ONLY == 1 )); then
+  PYTHON_BIN="$(nordility_python_for_render "${PYTHON_BIN}")"
   render_unit
   exit 0
 fi
 
 [[ "${EUID}" -eq 0 ]] || fail "run as root (sudo) to install the systemd service"
 command -v systemctl >/dev/null 2>&1 || fail "systemctl not found"
+nordility_require_install_tools
+PYTHON_BIN="$(nordility_secure_python "${PYTHON_BIN}")"
+getent group "${SOCKET_GROUP}" >/dev/null 2>&1 || fail "required group not found: ${SOCKET_GROUP}"
+nordility_stage_runtime "${REPO_ROOT}"
 
 tmp_unit="$(mktemp)"
 trap 'rm -f "${tmp_unit}"' EXIT

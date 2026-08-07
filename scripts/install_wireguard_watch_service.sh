@@ -3,7 +3,10 @@
 
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SCRIPT_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -P "${SCRIPT_DIR}/.." && pwd)"
+# shellcheck source=scripts/lib/install_runtime.sh
+source "${SCRIPT_DIR}/lib/install_runtime.sh"
 UNIT_NAME="nordility-wireguard-watch.service"
 UNIT_DIR="/etc/systemd/system"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
@@ -101,14 +104,15 @@ render_unit() {
   cat <<EOF
 [Unit]
 Description=Nordility NordVPN/WireGuard routing watcher
-Documentation=file://${REPO_ROOT}/README.md
+Documentation=https://github.com/casonk/nordility
 Wants=network-online.target
 After=network-online.target nordvpnd.service wg-quick@wg0.service
 
 [Service]
 Type=simple
-WorkingDirectory=${REPO_ROOT}
-Environment=PYTHONPATH=${REPO_ROOT}/src
+WorkingDirectory=${NORDILITY_RUNTIME_ROOT}
+Environment=PYTHONPATH=${NORDILITY_RUNTIME_SOURCE_ROOT}
+Environment=PYTHONDONTWRITEBYTECODE=1
 ExecStart=${PYTHON_BIN} -m nordility --backend cli watch-wireguard --interval ${INTERVAL_SECONDS} --stabilize-wait ${STABILIZE_SECONDS} --wireguard-interface ${WIREGUARD_INTERFACE} --wireguard-fwmark ${WIREGUARD_FWMARK} --ip-rule-priority ${IP_RULE_PRIORITY}
 Restart=always
 RestartSec=5
@@ -118,13 +122,24 @@ WantedBy=multi-user.target
 EOF
 }
 
+nordility_require_single_line "unit directory" "${UNIT_DIR}"
+nordility_require_single_line "watch interval" "${INTERVAL_SECONDS}"
+nordility_require_single_line "stabilize wait" "${STABILIZE_SECONDS}"
+nordility_require_single_line "WireGuard fwmark" "${WIREGUARD_FWMARK}"
+nordility_require_single_line "WireGuard interface" "${WIREGUARD_INTERFACE}"
+nordility_require_single_line "ip rule priority" "${IP_RULE_PRIORITY}"
+
 if (( RENDER_ONLY == 1 )); then
+  PYTHON_BIN="$(nordility_python_for_render "${PYTHON_BIN}")"
   render_unit
   exit 0
 fi
 
 [[ "${EUID}" -eq 0 ]] || fail "run as root (sudo) to install the systemd service"
 command -v systemctl >/dev/null 2>&1 || fail "systemctl not found"
+nordility_require_install_tools
+PYTHON_BIN="$(nordility_secure_python "${PYTHON_BIN}")"
+nordility_stage_runtime "${REPO_ROOT}"
 
 tmp_unit="$(mktemp)"
 trap 'rm -f "${tmp_unit}"' EXIT
