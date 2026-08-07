@@ -30,10 +30,11 @@ package "Configuration + Core Client" as CORE_PANEL #F5F5F5 {
 
   rectangle "NordVPNClient\n- connect / disconnect / change\n- list_groups / pick_group\n- build command tuples\n- dispatch to backend\n- inject launcher / runner / sleeper / rng" as CLIENT #D5E8D4
 
-  rectangle "WireGuard Watcher\nwatch_nordvpn_wireguard()\n- poll nordvpn status + nordlynx state\n- detect route/fwmark drift\n- repair user-managed WireGuard only" as WATCH #D5E8D4
-  rectangle "WireGuard Watcher\nwatch_nordvpn_wireguard()\n- poll nordvpn status + nordlynx state\n- start configured wg0 if down\n- repair user-managed WireGuard only" as WATCH #D5E8D4
+  rectangle "Token Login Broker\n- root-owned CLI validation\n- no credential in argv/env\n- exact NordVPN 5.2 PTY prompt\n- require ECHO/ECHONL off\n- read + wipe private stdin\n- suppress child output" as TOKEN #D5E8D4
 
-  rectangle "Web Control\nsrc/nordility/web.py\n- localhost HTTP server\n- Safari/Caddy actions\n- power / rotate / group select" as WEB #D5E8D4
+  rectangle "WireGuard Watcher\nwatch_nordvpn_wireguard()\n- poll nordvpn status + nordlynx state\n- start configured wg0 if down\n- filter config-owned interfaces before peer mutation\n- reject daemon-owned nordlynx\n- exact fwmark/rule/protocol-196 ownership" as WATCH #D5E8D4
+
+  rectangle "Web Control\nsrc/nordility/web.py\n- root:caddy Unix socket for actions\n- TCP is status-only\n- exact HTTPS Origin/Host + JSON\n- power / rotate / group select" as WEB #D5E8D4
 
   rectangle "Group Pools\nFAST_GROUPS / FULL_GROUPS\n- underscore-separated names\n- fast/full selection" as GROUPS #D5E8D4
 
@@ -62,12 +63,15 @@ GROUPS --> CLIENT : fast/full pools
 GROUPS --> WEB : group select
 CLIENT --> WIN : backend=windows
 CLIENT --> CLIBACK : backend=cli
+CLIENT --> TOKEN : login token over private stdin
+TOKEN --> CLIBACK : nordvpn login --token\nno positional credential
 WATCH --> CLIBACK : backend=cli
 WEB --> CLIBACK : backend=cli
 WIN --> RESULT : launch result or error
 CLIBACK --> RESULT : completed process or error
 RESULT --> CLI : print message / exit status
 TESTS ..> CLIENT : inject fakes
+TESTS ..> TOKEN : PTY + Podman race tests
 TESTS ..> WATCH
 TESTS ..> WEB
 TESTS ..> CONFIG
@@ -77,7 +81,7 @@ legend right
   == Primary Flows ==
   CLI: argparse -> NordVPNClient -> backend command -> message/exit code
   Watcher: argparse/systemd -> watch-wireguard -> WireGuard route repair
-  Web: Safari/Caddy -> localhost web -> NordVPNClient -> WireGuard repair
+  Web: Safari -> Caddy/mTLS -> Unix socket -> NordVPNClient -> WireGuard repair
   Python API: helper -> NordVPNClient -> CommandResult or legacy status string
 
   == Key Commands ==

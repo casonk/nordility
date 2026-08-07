@@ -62,15 +62,27 @@ The accepted backends are:
 
 For auto-pass-backed login defaults, copy [`config/auto-pass.example.ini`](config/auto-pass.example.ini) to `config/auto-pass.ini`. The CLI will use that file as the default `--keepass-profile` and `--keepass-entry` source for `login`, `connect --auto-login`, and `change --auto-login`.
 
+Literal `--token` input is intentionally unsupported because it exposes the
+credential in the caller's process arguments. On Linux, KeePass-resolved
+tokens pass over a private stdin pipe to `nordility.token_login`; that helper
+validates the root-owned official CLI, disables core dumps/process dumpability,
+and launches `nordvpn login --token` in a PTY with no positional credential.
+It verifies consent is disabled, waits for NordVPN 5.2's exact prompt and
+disabled `ECHO`/`ECHONL`, and only then reads, forwards, and wipes the token
+while discarding all child output. Prompt drift fails closed; there is no
+credential-bearing fallback. The token is also redacted from caller errors and
+results.
+
 ## Usage
 
 ```bash
 nordility connect
+nordility login
 nordility disconnect
 nordility change --speed fast
 nordility change --group United_States
 nordility watch-wireguard --once
-nordility web --host 127.0.0.1 --port 5300
+nordility web --host 127.0.0.1 --port 5300  # status only; actions disabled
 nordility list-groups --speed full
 ```
 
@@ -113,20 +125,35 @@ sudo systemctl status nordility-wireguard-watch.service --no-pager
 
 The watcher detects NordVPN status/NordLynx endpoint changes and routing drift,
 starts `wg0` via `wg-quick@wg0.service` if `/etc/wireguard/wg0.conf` exists
-but the interface is down, then reapplies the user-managed WireGuard socket
-fwmark plus:
+but the interface is down, then derives a config-owned interface allowlist
+before it reads or resets peer endpoints. It reapplies the user-managed
+WireGuard socket fwmark plus:
 
 ```bash
-ip rule add fwmark 51820 lookup main priority 100
+ip rule add fwmark 51820 lookup main priority 100 protocol 196
 ```
 
 It only changes WireGuard interfaces backed by `/etc/wireguard/<iface>.conf`,
-so NordVPN's daemon-managed `nordlynx` fwmark is left alone.
+and it rejects the daemon-managed `nordlynx` name even if a confusingly named
+config file exists. A repair is reported as successful only when the interface
+fwmark mutation succeeds and the exact priority-`100`, fwmark-`51820`,
+lookup-`main`, protocol-`196` rule is already present or is added successfully.
+The numeric protocol tag is Nordility's ownership marker, so rollback deletes
+only the rule Nordility created. Rules at another priority, for another mark,
+table, or protocol, or with a partial mark mask do not satisfy that check.
+Before installing the global rule, Nordility inventories every active
+WireGuard fwmark and refuses a collision on any interface outside the explicit
+mutation allowlist. A newly added rule is rolled back if no target interface
+can be marked.
+
+Interface startup is systemd-only. Nordility does not fall back to raw
+`wg-quick up`, because doing so would bypass security drop-ins attached to the
+`wg-quick@<interface>.service` activation boundary.
 
 ## Private Web Control
 
-The web control surface is a localhost service intended to sit behind
-`wiring-harness` Caddy/mTLS:
+The privileged web control surface is served only over a root-created Unix
+socket intended for `wiring-harness` Caddy/mTLS:
 
 ```bash
 sudo ./scripts/install_web_service.sh
@@ -135,20 +162,51 @@ sudo systemctl status nordility-web.service --no-pager
 
 Default backend:
 
-- Local URL: `http://127.0.0.1:5300`
+- Local upstream: `unix//run/nordility/web.sock` (`root:caddy`, mode `0660`)
 - Private Caddy URL: `https://nordility.clockwork.internal`
 
+TCP mode is deliberately status-only: `POST /api/action` returns `403` even on
+loopback. Unix-socket actions additionally require the exact configured HTTPS
+`Origin`, matching `Host`, and `application/json`; this prevents loopback
+bypass and browser CSRF from replacing Caddy/mTLS as the authorization boundary.
+
 The page exposes power on/off, fast/full rotation, and built-in country
-selection. The installed service enables `--auto-login` by default, so a
-logged-out NordVPN client is re-authenticated through the repo's auto-pass /
-KeePass token defaults. After each VPN action it runs the same WireGuard repair
-path used by the watcher so `wg0` remains available for phone access.
+selection. Installed root services deliberately do not accept `--auto-login`
+or KeePass options: authenticate the official NordVPN client separately before
+starting them. After each VPN action the web service runs the same WireGuard
+repair path used by the watcher so `wg0` remains available for phone access.
+
+All three systemd installers stage an explicit Python-module allowlist at
+`/opt/nordility` with root ownership and non-writable modes. Root services never
+execute Python from the user-writable Git checkout.
 
 After adding `nordility.clockwork.internal` to the local `wiring-harness`
 service registry, refresh the shared certificate SANs and Caddy config:
+
+```toml
+[[services]]
+name        = "nordility"
+description = "NordVPN outbound control surface"
+owner_repo  = "./util-repos/nordility"
+hostname    = "nordility.clockwork.internal"
+access_mode = "shared-mtls"
+ingress     = "wiring-harness-caddy"
+unix_socket = "/run/nordility/web.sock"
+```
 
 ```bash
 cd ../wiring-harness
 WH_WG_IP=10.99.0.1 bash scripts/setup-mtls.sh --refresh-server
 sudo python3 scripts/setup_caddy.py --provision
 ```
+
+## Tests
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src python3 -m unittest discover -s tests -v
+bash tests/test_token_login_podman.sh
+```
+
+The container test runs the Linux-only helper against a deliberately delayed
+no-echo prompt and checks that accepted and rejected credentials do not escape
+through process arguments, the environment, or helper output.

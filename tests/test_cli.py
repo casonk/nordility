@@ -77,36 +77,22 @@ class CLITests(TestCase):
         self.assertIn("boom", stderr.getvalue())
 
     @mock.patch("nordility.cli.NordVPNClient")
-    def test_login_subcommand_calls_login(self, mock_client_cls) -> None:
-        mock_client = mock_client_cls.return_value
-        mock_client.login.return_value = CommandResult(
-            command=("nordvpn", "login", "--token", "tok"),
-            message="NordVPN Logged In",
-            returncode=0,
-        )
-
-        stdout = io.StringIO()
+    def test_login_subcommand_rejects_literal_token_argument(self, mock_client_cls) -> None:
         with (
             mock.patch(
                 "nordility.cli._resolve_keepass_defaults", return_value=_DEFAULT_KEEPASS_DEFAULTS
             ),
-            mock.patch("sys.stdout", new=stdout),
+            self.assertRaises(SystemExit),
         ):
-            exit_code = main(["login", "--token", "tok"])
+            main(["login", "--token", "must-not-enter-process-argv"])
 
-        self.assertEqual(exit_code, 0)
-        self.assertIn("NordVPN Logged In", stdout.getvalue())
-        mock_client.login.assert_called_once_with(
-            token="tok",
-            keepass_entry=None,
-            keepass_profile="",
-        )
+        mock_client_cls.return_value.login.assert_not_called()
 
     @mock.patch("nordility.cli.NordVPNClient")
     def test_login_subcommand_defaults_to_keepass_entry(self, mock_client_cls) -> None:
         mock_client = mock_client_cls.return_value
         mock_client.login.return_value = CommandResult(
-            command=("nordvpn", "login", "--token", "tok"),
+            command=("python", "-m", "nordility.token_login", "/usr/bin/nordvpn"),
             message="NordVPN Logged In",
             returncode=0,
         )
@@ -117,7 +103,6 @@ class CLITests(TestCase):
             main(["login"])
 
         mock_client.login.assert_called_once_with(
-            token=None,
             keepass_entry=DEFAULT_KEEPASS_ENTRY,
             keepass_profile="",
         )
