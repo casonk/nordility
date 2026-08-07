@@ -3,6 +3,9 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
+import socketserver
+import stat
 import subprocess
 import threading
 import time
@@ -14,6 +17,7 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from .client import (
     DEFAULT_KEEPASS_ENTRY,
@@ -35,6 +39,7 @@ LOGGER = logging.getLogger("nordility.web")
 
 DEFAULT_WEB_HOST = "127.0.0.1"
 DEFAULT_WEB_PORT = 5300
+DEFAULT_WEB_SOCKET_MODE = 0o660
 _PUBLIC_INFO_TTL = 60.0
 _PUBLIC_INFO_URL = "https://ipinfo.io/json"
 
@@ -237,10 +242,13 @@ INDEX_HTML = """<!doctype html>
   <script>
     const $ = (id) => document.getElementById(id);
     let busy = false;
+    let actionsEnabled = false;
 
     function setBusy(value) {
       busy = value;
-      for (const button of document.querySelectorAll("button")) button.disabled = value;
+      for (const button of document.querySelectorAll("button")) {
+        button.disabled = value || !actionsEnabled;
+      }
       $("message").textContent = value ? "Working..." : $("message").textContent;
     }
 
@@ -253,6 +261,7 @@ INDEX_HTML = """<!doctype html>
     }
 
     function renderStatus(data) {
+      actionsEnabled = data.actions_enabled === true;
       const lines = (data.nordvpn_status || "").split("\\n").map((line) => line.trim()).filter(Boolean);
       const state = statusValue(lines, "Status") || "Unknown";
       $("state").textContent = state;
@@ -273,6 +282,7 @@ INDEX_HTML = """<!doctype html>
         }
         select.dataset.loaded = "1";
       }
+      setBusy(false);
     }
 
     async function refresh() {
@@ -320,6 +330,12 @@ INDEX_HTML = """<!doctype html>
 class ActionOutcome:
     result: CommandResult
     repair: WireGuardRestoreSummary
+
+
+class ThreadingUnixHTTPServer(socketserver.ThreadingMixIn, socketserver.UnixStreamServer):
+    """Threaded HTTP-over-Unix-socket server for the privileged control path."""
+
+    daemon_threads = True
 
 
 class NordilityWebController:
@@ -456,7 +472,12 @@ def _json_bytes(data: dict[str, Any]) -> bytes:
     return json.dumps(data, sort_keys=True).encode("utf-8")
 
 
-def make_handler(controller: NordilityWebController) -> type[BaseHTTPRequestHandler]:
+def make_handler(
+    controller: NordilityWebController,
+    *,
+    actions_enabled: bool = False,
+    trusted_origin: str | None = None,
+) -> type[BaseHTTPRequestHandler]:
     class NordilityWebHandler(BaseHTTPRequestHandler):
         server_version = "NordilityWeb/1.0"
 
@@ -467,7 +488,9 @@ def make_handler(controller: NordilityWebController) -> type[BaseHTTPRequestHand
                 )
                 return
             if self.path == "/api/status":
-                self._send_json(HTTPStatus.OK, controller.status())
+                status = controller.status()
+                status["actions_enabled"] = actions_enabled
+                self._send_json(HTTPStatus.OK, status)
                 return
             self.send_error(HTTPStatus.NOT_FOUND, "not found")
 
@@ -480,7 +503,9 @@ def make_handler(controller: NordilityWebController) -> type[BaseHTTPRequestHand
                 )
                 return
             if self.path == "/api/status":
-                body = _json_bytes(controller.status())
+                status = controller.status()
+                status["actions_enabled"] = actions_enabled
+                body = _json_bytes(status)
                 self._send_headers(HTTPStatus.OK, len(body), "application/json; charset=utf-8")
                 return
             self.send_error(HTTPStatus.NOT_FOUND, "not found")
@@ -488,6 +513,25 @@ def make_handler(controller: NordilityWebController) -> type[BaseHTTPRequestHand
         def do_POST(self) -> None:  # noqa: N802
             if self.path != "/api/action":
                 self.send_error(HTTPStatus.NOT_FOUND, "not found")
+                return
+            if not actions_enabled or trusted_origin is None:
+                self._send_json(
+                    HTTPStatus.FORBIDDEN,
+                    {"error": "mutating actions require the protected Unix-socket transport"},
+                )
+                return
+            if self.headers.get("Origin") != trusted_origin:
+                self._send_json(HTTPStatus.FORBIDDEN, {"error": "untrusted request origin"})
+                return
+            if self.headers.get("Host") != urlsplit(trusted_origin).netloc:
+                self._send_json(HTTPStatus.FORBIDDEN, {"error": "untrusted request host"})
+                return
+            content_type = self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+            if content_type != "application/json":
+                self._send_json(
+                    HTTPStatus.UNSUPPORTED_MEDIA_TYPE,
+                    {"error": "actions require application/json"},
+                )
                 return
             try:
                 payload = self._read_json()
@@ -508,6 +552,11 @@ def make_handler(controller: NordilityWebController) -> type[BaseHTTPRequestHand
 
         def log_message(self, fmt: str, *args: object) -> None:
             LOGGER.info("%s - %s", self.address_string(), fmt % args)
+
+        def address_string(self) -> str:
+            if actions_enabled:
+                return "trusted-unix-peer"
+            return super().address_string()
 
         def _read_json(self) -> dict[str, Any]:
             length = int(self.headers.get("Content-Length", "0"))
@@ -532,9 +581,44 @@ def make_handler(controller: NordilityWebController) -> type[BaseHTTPRequestHand
             self.send_header("Content-Length", str(content_length))
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("X-Frame-Options", "DENY")
+            self.send_header(
+                "Content-Security-Policy",
+                "default-src 'none'; style-src 'unsafe-inline'; "
+                "script-src 'unsafe-inline'; connect-src 'self'; "
+                "base-uri 'none'; frame-ancestors 'none'",
+            )
             self.end_headers()
 
     return NordilityWebHandler
+
+
+def _validate_trusted_origin(raw_origin: str) -> str:
+    parsed = urlsplit(raw_origin)
+    if (
+        parsed.scheme != "https"
+        or not parsed.netloc
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.path not in {"", "/"}
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise ConfigurationError("--trusted-origin must be one canonical HTTPS origin")
+    return f"https://{parsed.netloc}"
+
+
+def _validate_socket_parent(socket_path: Path) -> None:
+    if not socket_path.is_absolute():
+        raise ConfigurationError("--unix-socket must be an absolute path")
+    if socket_path.exists() or socket_path.is_symlink():
+        raise ConfigurationError("refusing to replace an existing Unix-socket path")
+    parent = socket_path.parent
+    if parent.is_symlink() or not parent.is_dir():
+        raise ConfigurationError("Unix-socket parent must be a non-symlink directory")
+    metadata = parent.stat()
+    if metadata.st_mode & 0o022:
+        raise ConfigurationError("Unix-socket parent must not be group/world writable")
 
 
 def run_web_server(args: argparse.Namespace) -> None:
@@ -548,9 +632,43 @@ def run_web_server(args: argparse.Namespace) -> None:
         keepass_entry=args.keepass_entry,
         keepass_profile=args.keepass_profile,
     )
-    server = ThreadingHTTPServer((args.host, args.port), make_handler(controller))
-    LOGGER.info("Serving nordility web UI on http://%s:%d", args.host, args.port)
+    socket_path: Path | None = None
+    socket_inode: int | None = None
+    if args.unix_socket:
+        trusted_origin = _validate_trusted_origin(args.trusted_origin or "")
+        socket_path = Path(args.unix_socket)
+        _validate_socket_parent(socket_path)
+        server = ThreadingUnixHTTPServer(
+            str(socket_path),
+            make_handler(
+                controller,
+                actions_enabled=True,
+                trusted_origin=trusted_origin,
+            ),
+        )
+        os.chmod(socket_path, DEFAULT_WEB_SOCKET_MODE)
+        socket_inode = socket_path.lstat().st_ino
+        LOGGER.info(
+            "Serving privileged nordility web UI on Unix socket %s for %s",
+            socket_path,
+            trusted_origin,
+        )
+    else:
+        host = args.host or DEFAULT_WEB_HOST
+        server = ThreadingHTTPServer((host, args.port), make_handler(controller))
+        LOGGER.warning(
+            "Serving status-only nordility web UI on http://%s:%d; actions are disabled on TCP",
+            host,
+            args.port,
+        )
     try:
         server.serve_forever()
     finally:
         server.server_close()
+        if socket_path is not None and socket_inode is not None:
+            try:
+                metadata = socket_path.lstat()
+                if stat.S_ISSOCK(metadata.st_mode) and metadata.st_ino == socket_inode:
+                    socket_path.unlink()
+            except FileNotFoundError:
+                pass

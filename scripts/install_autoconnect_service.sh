@@ -3,14 +3,14 @@
 
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SCRIPT_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -P "${SCRIPT_DIR}/.." && pwd)"
+# shellcheck source=scripts/lib/install_runtime.sh
+source "${SCRIPT_DIR}/lib/install_runtime.sh"
 UNIT_NAME="nordility-autoconnect.service"
 UNIT_DIR="/etc/systemd/system"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 GROUP=""
-KEEPASS_PROFILE="${KEEPASS_PROFILE:-}"
-KEEPASS_ENTRY="${KEEPASS_ENTRY:-}"
-AUTO_LOGIN=1
 RENDER_ONLY=0
 ENABLE_NOW=1
 
@@ -19,7 +19,7 @@ usage() {
 Usage: install_autoconnect_service.sh [options]
 
 Install a one-shot systemd service that runs:
-  nordility connect [--group GROUP] [--auto-login ...]
+  nordility connect [--group GROUP]
 
 on every boot after the network is online.  The service is Type=oneshot with
 RemainAfterExit=yes so systemd reports it as active once the connect succeeds.
@@ -31,9 +31,6 @@ Options:
   --python-bin PATH             Python executable for ExecStart. Default: python3
   --group GROUP                 Country or server group to connect to (e.g. United_States).
                                 Omit to let nordvpn pick the server automatically.
-  --no-auto-login               Do not use auto-pass/KeePass to recover a logged-out client.
-  --keepass-profile PROFILE     Override the auto-pass profile for NordVPN token lookup.
-  --keepass-entry ENTRY         Override the KeePassXC entry for NordVPN token lookup.
   --help                        Show this help text.
 
 Typical flow:
@@ -69,18 +66,6 @@ while [[ $# -gt 0 ]]; do
       GROUP="$2"
       shift 2
       ;;
-    --no-auto-login)
-      AUTO_LOGIN=0
-      shift
-      ;;
-    --keepass-profile)
-      KEEPASS_PROFILE="$2"
-      shift 2
-      ;;
-    --keepass-entry)
-      KEEPASS_ENTRY="$2"
-      shift 2
-      ;;
     --help|-h)
       usage
       exit 0
@@ -96,27 +81,19 @@ render_unit() {
   if [[ -n "${GROUP}" ]]; then
     connect_args+=(--group "${GROUP}")
   fi
-  if (( AUTO_LOGIN == 1 )); then
-    connect_args+=(--auto-login)
-    if [[ -n "${KEEPASS_ENTRY}" ]]; then
-      connect_args+=(--keepass-entry "${KEEPASS_ENTRY}")
-    fi
-    if [[ -n "${KEEPASS_PROFILE}" ]]; then
-      connect_args+=(--keepass-profile "${KEEPASS_PROFILE}")
-    fi
-  fi
   cat <<EOF
 [Unit]
 Description=Nordility boot auto-connect
-Documentation=file://${REPO_ROOT}/README.md
+Documentation=https://github.com/casonk/nordility
 Wants=network-online.target
 After=network-online.target
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-WorkingDirectory=${REPO_ROOT}
-Environment=PYTHONPATH=${REPO_ROOT}/src
+WorkingDirectory=${NORDILITY_RUNTIME_ROOT}
+Environment=PYTHONPATH=${NORDILITY_RUNTIME_SOURCE_ROOT}
+Environment=PYTHONDONTWRITEBYTECODE=1
 ExecStart=${PYTHON_BIN} -m nordility --backend cli connect${connect_args[*]:+ ${connect_args[*]}}
 
 [Install]
@@ -124,13 +101,20 @@ WantedBy=multi-user.target
 EOF
 }
 
+nordility_require_single_line "unit directory" "${UNIT_DIR}"
+nordility_require_single_line "NordVPN group" "${GROUP}"
+
 if (( RENDER_ONLY == 1 )); then
+  PYTHON_BIN="$(nordility_python_for_render "${PYTHON_BIN}")"
   render_unit
   exit 0
 fi
 
 [[ "${EUID}" -eq 0 ]] || fail "run as root (sudo) to install the systemd service"
 command -v systemctl >/dev/null 2>&1 || fail "systemctl not found"
+nordility_require_install_tools
+PYTHON_BIN="$(nordility_secure_python "${PYTHON_BIN}")"
+nordility_stage_runtime "${REPO_ROOT}"
 
 tmp_unit="$(mktemp)"
 trap 'rm -f "${tmp_unit}"' EXIT

@@ -76,10 +76,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    login_parser = subparsers.add_parser("login", help="Log in to NordVPN using a token.")
-    login_token_group = login_parser.add_mutually_exclusive_group()
-    login_token_group.add_argument("--token", help="NordVPN access token.")
-    login_token_group.add_argument(
+    login_parser = subparsers.add_parser(
+        "login",
+        help="Log in through the hardened Linux helper using a KeePass token.",
+    )
+    login_parser.add_argument(
         "--keepass-entry",
         default=keepass_entry_default,
         metavar="ENTRY",
@@ -246,16 +247,28 @@ def build_parser() -> argparse.ArgumentParser:
         "web",
         help="Run the local Nordility web control surface.",
     )
-    web_parser.add_argument(
+    web_transport = web_parser.add_mutually_exclusive_group()
+    web_transport.add_argument(
         "--host",
-        default=DEFAULT_WEB_HOST,
-        help=f"Bind host. Default: {DEFAULT_WEB_HOST}.",
+        help=(
+            f"Bind a status-only TCP listener. Default without --unix-socket: {DEFAULT_WEB_HOST}."
+        ),
+    )
+    web_transport.add_argument(
+        "--unix-socket",
+        metavar="PATH",
+        help="Protected Unix socket for privileged actions; intended for a Caddy/mTLS proxy.",
     )
     web_parser.add_argument(
         "--port",
         type=int,
         default=DEFAULT_WEB_PORT,
         help=f"Bind port. Default: {DEFAULT_WEB_PORT}.",
+    )
+    web_parser.add_argument(
+        "--trusted-origin",
+        metavar="HTTPS_ORIGIN",
+        help="Exact HTTPS Origin and Host authorized for Unix-socket mutation requests.",
     )
     web_parser.add_argument(
         "--wireguard-interface",
@@ -322,8 +335,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "login":
             result = client.login(
-                token=args.token if args.token else None,
-                keepass_entry=args.keepass_entry if not args.token else None,
+                keepass_entry=args.keepass_entry,
                 keepass_profile=args.keepass_profile,
             )
             print(result.message)

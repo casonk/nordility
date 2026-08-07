@@ -1,13 +1,22 @@
+import http.client
 import json
 import tempfile
+import threading
 import unittest
 import urllib.error
 from pathlib import Path
 from subprocess import CompletedProcess
+from unittest import mock
 from unittest.mock import patch
 
-from nordility.client import CommandResult, ConfigurationError
-from nordility.web import NordilityWebController
+from nordility.client import CommandResult, ConfigurationError, WireGuardRestoreSummary
+from nordility.web import (
+    ActionOutcome,
+    NordilityWebController,
+    ThreadingHTTPServer,
+    _validate_trusted_origin,
+    make_handler,
+)
 
 
 class NordilityWebControllerTests(unittest.TestCase):
@@ -65,9 +74,10 @@ class NordilityWebControllerTests(unittest.TestCase):
     def test_disconnect_starts_wireguard_and_repairs_routing(self) -> None:
         calls: list[tuple] = []
         active_interfaces = ""
+        routing_rule = ""
 
         def runner(command, capture_output, text, check):
-            nonlocal active_interfaces
+            nonlocal active_interfaces, routing_rule
             calls.append(tuple(command))
             key = tuple(command)
             if key == ("nordvpn", "disconnect"):
@@ -79,7 +89,24 @@ class NordilityWebControllerTests(unittest.TestCase):
                 return CompletedProcess(command, 0, stdout="", stderr="")
             if key == ("wg", "show", "wg0", "endpoints"):
                 return CompletedProcess(command, 0, stdout="WG0\t10.99.0.2:51820\n", stderr="")
+            if key == ("wg", "show", "all", "fwmark"):
+                return CompletedProcess(command, 0, stdout="wg0\toff\n", stderr="")
             if key == ("ip", "rule", "show"):
+                return CompletedProcess(command, 0, stdout=routing_rule, stderr="")
+            if key == (
+                "ip",
+                "rule",
+                "add",
+                "fwmark",
+                "51820",
+                "lookup",
+                "main",
+                "priority",
+                "100",
+                "protocol",
+                "196",
+            ):
+                routing_rule = "100: from all fwmark 0xca6c lookup main proto 196\n"
                 return CompletedProcess(command, 0, stdout="", stderr="")
             return CompletedProcess(command, 0, stdout="", stderr="")
 
@@ -187,6 +214,93 @@ class NordilityWebControllerTests(unittest.TestCase):
             controller.status()
 
         self.assertEqual(call_count, 1)
+
+
+class NordilityWebTransportTests(unittest.TestCase):
+    def request(
+        self,
+        handler,
+        *,
+        headers: dict[str, str],
+    ) -> tuple[int, bytes]:
+        server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            connection = http.client.HTTPConnection("127.0.0.1", server.server_port, timeout=2)
+            connection.request(
+                "POST",
+                "/api/action",
+                body=b'{"action":"disconnect"}',
+                headers=headers,
+            )
+            response = connection.getresponse()
+            return response.status, response.read()
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
+
+    def test_tcp_handler_never_allows_mutations(self) -> None:
+        controller = mock.Mock()
+        handler = make_handler(controller)
+
+        status, body = self.request(
+            handler,
+            headers={
+                "Content-Type": "application/json",
+                "Origin": "https://nordility.clockwork.internal",
+                "Host": "nordility.clockwork.internal",
+            },
+        )
+
+        self.assertEqual(status, 403)
+        self.assertIn(b"protected Unix-socket transport", body)
+        controller.perform_action.assert_not_called()
+
+    def test_protected_handler_requires_exact_origin_host_and_json(self) -> None:
+        origin = "https://nordility.clockwork.internal"
+        controller = mock.Mock()
+        controller.perform_action.return_value = ActionOutcome(
+            result=CommandResult(command=("nordvpn", "disconnect"), message="VPN Disconnected"),
+            repair=WireGuardRestoreSummary(),
+        )
+        controller.status.return_value = {"groups": {"fast": [], "full": []}}
+        handler = make_handler(controller, actions_enabled=True, trusted_origin=origin)
+
+        wrong_status, _ = self.request(
+            handler,
+            headers={
+                "Content-Type": "application/json",
+                "Origin": "https://attacker.invalid",
+                "Host": "nordility.clockwork.internal",
+            },
+        )
+        self.assertEqual(wrong_status, 403)
+
+        ok_status, _ = self.request(
+            handler,
+            headers={
+                "Content-Type": "application/json",
+                "Origin": origin,
+                "Host": "nordility.clockwork.internal",
+            },
+        )
+        self.assertEqual(ok_status, 200)
+        controller.perform_action.assert_called_once_with({"action": "disconnect"})
+
+    def test_trusted_origin_must_be_one_https_origin(self) -> None:
+        self.assertEqual(
+            _validate_trusted_origin("https://nordility.clockwork.internal/"),
+            "https://nordility.clockwork.internal",
+        )
+        for invalid in (
+            "http://nordility.clockwork.internal",
+            "https://nordility.clockwork.internal/path",
+            "https://user@nordility.clockwork.internal",
+        ):
+            with self.subTest(origin=invalid), self.assertRaises(ConfigurationError):
+                _validate_trusted_origin(invalid)
 
 
 if __name__ == "__main__":

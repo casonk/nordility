@@ -1,0 +1,21 @@
+FROM docker.io/library/python:3.11-slim-bookworm
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/opt/nordility/src
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends gcc libc6-dev procps \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY tests/containers/token-login/mock-nordvpn-secure-prompt.c /tmp/mock-nordvpn-secure-prompt.c
+RUN cc -std=c11 -O2 -Wall -Wextra -Werror \
+        -o /usr/bin/nordvpn /tmp/mock-nordvpn-secure-prompt.c \
+    && chown root:root /usr/bin/nordvpn \
+    && chmod 0755 /usr/bin/nordvpn \
+    && rm /tmp/mock-nordvpn-secure-prompt.c
+
+COPY src/ /opt/nordility/src/
+COPY --chmod=0755 tests/containers/token-login/run-test.sh /usr/local/bin/run-token-login-test
+
+ENTRYPOINT ["/usr/local/bin/run-token-login-test"]

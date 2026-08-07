@@ -31,9 +31,9 @@ plantuml -tpng -tsvg docs/diagrams/repo-architecture.puml
    - `NordVPNClient` owns command building, group selection, wait handling, and backend dispatch.
    - `connect()` and `disconnect()` build backend-specific commands and return `CommandResult`.
    - `change()` selects an explicit or random group and applies default waits of 10 seconds for `fast` and 30 seconds for `full`.
-   - `watch_nordvpn_wireguard()` detects NordVPN/NordLynx state changes, starts configured WireGuard interfaces that are down, and repairs user-managed WireGuard routing.
+   - `watch_nordvpn_wireguard()` detects NordVPN/NordLynx state changes, starts configured WireGuard interfaces that are down, filters discovered interfaces to config-owned non-`nordlynx` devices before endpoint mutation, and repairs their WireGuard routing.
    - `list_groups()` and `pick_group()` expose the built-in country pools.
-   - `src/nordility/web.py` serves a dependency-free localhost control page for private Caddy/mTLS access.
+   - `src/nordility/web.py` serves privileged actions only through a protected Unix socket for private Caddy/mTLS access; TCP is status-only.
 4. Backend Execution Layer (`src/nordility/client.py`)
    - The `windows` backend launches `NordVPN.exe` via `subprocess.Popen`.
    - The `cli` backend runs the `nordvpn` terminal CLI via `subprocess.run`.
@@ -67,16 +67,20 @@ plantuml -tpng -tsvg docs/diagrams/repo-architecture.puml
 -> start configured WireGuard interfaces such as `wg0` when down
 -> initial WireGuard repair pass
 -> poll `nordvpn status` and NordLynx WireGuard state
--> on reconnect/rotate or missing routing state, refresh WireGuard peers
--> set the socket fwmark only on interfaces backed by `/etc/wireguard/<iface>.conf`
--> ensure `fwmark 51820 lookup main priority 100` exists
+-> on reconnect/rotate or missing routing state, discover active interfaces
+-> keep only interfaces backed by `/etc/wireguard/<iface>.conf` and reject `nordlynx`
+-> inventory every active WireGuard fwmark and reject collisions outside the exact allowlist
+-> refresh peer endpoints and set the socket fwmark only on that filtered set
+-> parse policy rules by exact priority, full fwmark, and main-table lookup
+-> report routing restored only when the fwmark succeeds and the exact owned
+   `fwmark 51820 lookup main priority 100 protocol 196` rule exists or is added
 
 ### Web Control Flow
 
 `nordility web`
--> bind `127.0.0.1:5300`
+-> systemd creates `/run/nordility`; Nordility binds `web.sock` as `root:caddy` mode `0660`
 -> wiring-harness Caddy exposes `https://nordility.clockwork.internal`
--> Safari posts power/rotate/group actions
+-> exact HTTPS Origin/Host and JSON checks authorize Caddy-forwarded browser actions
 -> `NordVPNClient` runs the requested CLI command
 -> WireGuard repair runs after each action
 
@@ -101,8 +105,18 @@ Each helper:
 - Internal group pools use underscore-separated country names.
 - `cli` execution converts underscores to spaces at the final command boundary only.
 - Windows execution is launch-oriented and can sleep after `Popen`; CLI execution is synchronous and raises on non-zero exit.
-- WireGuard routing repair must not overwrite NordVPN's daemon-managed `nordlynx` fwmark.
-- The web control surface must bind to localhost and rely on wiring-harness Caddy/mTLS for phone-facing access.
+- WireGuard repair must filter to config-owned interfaces before peer endpoint mutation and must never overwrite NordVPN's daemon-managed `nordlynx` peers or fwmark.
+- WireGuard routing success requires both a successful interface fwmark mutation and an exact priority/fwmark/main-table policy rule; substring matches and partial masks are insufficient.
+- The routing protocol `196` tag is Nordility's rule-ownership boundary;
+  verification and rollback reject or preserve rules with any other protocol.
+- Privileged web actions must use the protected Unix socket and exact Origin/Host checks; TCP listeners remain status-only.
+- Root services execute the explicit root-owned `/opt/nordility` staging allowlist, never a user-writable checkout.
+- Installed root services require the Nord client to be authenticated
+  separately and do not opt into the unstaged auto-pass/KeePass flow.
+- Programmatic token login invokes the validated root-owned CLI without a
+  positional credential, waits for the exact NordVPN 5.2 PTY prompt and
+  disabled echo, and only then reads/wipes private stdin. Prompt drift has no
+  fallback.
 - The compatibility helper names and CLI verbs are part of the public surface and should remain stable unless a breaking change is intentional.
 
 ## Key Entry Points
@@ -110,8 +124,10 @@ Each helper:
 - CLI entry point: `src/nordility/cli.py`
 - Module entry point: `src/nordility/__main__.py`
 - Core client + wrappers: `src/nordility/client.py`
+- Linux no-echo token broker: `src/nordility/token_login.py`
 - Public package surface: `src/nordility/__init__.py`
-- Current unit tests: `tests/test_client.py`
+- Unit tests: `tests/`
+- Real Linux PTY race regression: `tests/test_token_login_podman.sh`
 
 ## Testing Strategy
 
