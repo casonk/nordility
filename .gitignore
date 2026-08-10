@@ -13,3 +13,6 @@ CLAUDE.md
 .tachometer/
 
 /REFS-LOCAL.md
+
+# Tooling caches and build artifacts
+.ruff_cache/

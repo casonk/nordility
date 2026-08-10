@@ -10,6 +10,7 @@ the environment, logs, or captured child output.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import ctypes
 import os
 import pty
@@ -176,18 +177,12 @@ def _wait_for_login(pid: int, master_fd: int) -> int:
 
 
 def _terminate_child(pid: int) -> None:
-    try:
+    with contextlib.suppress(ProcessLookupError):
         os.killpg(pid, signal.SIGKILL)
-    except ProcessLookupError:
-        pass
-    try:
+    with contextlib.suppress(ProcessLookupError):
         os.kill(pid, signal.SIGKILL)
-    except ProcessLookupError:
-        pass
-    try:
+    with contextlib.suppress(ChildProcessError):
         os.waitpid(pid, 0)
-    except ChildProcessError:
-        pass
 
 
 def _verify_consent_disabled(executable: str) -> None:

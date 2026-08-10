@@ -89,9 +89,16 @@ class TokenLoginHelperTests(unittest.TestCase):
         with mock.patch.object(token_login.subprocess, "run", side_effect=results) as run:
             token_login._verify_consent_disabled("/usr/bin/nordvpn")
 
-        self.assertEqual(run.call_args_list[0].args[0], ["/usr/bin/nordvpn", "set", "analytics", "off"])
+        self.assertEqual(
+            run.call_args_list[0].args[0], ["/usr/bin/nordvpn", "set", "analytics", "off"]
+        )
         self.assertEqual(run.call_args_list[1].args[0], ["/usr/bin/nordvpn", "settings"])
-        self.assertTrue(all(call.kwargs["stdin"] is token_login.subprocess.DEVNULL for call in run.call_args_list))
+        self.assertTrue(
+            all(
+                call.kwargs["stdin"] is token_login.subprocess.DEVNULL
+                for call in run.call_args_list
+            )
+        )
 
     def test_child_cleanup_kills_session_and_reaps(self) -> None:
         with (
