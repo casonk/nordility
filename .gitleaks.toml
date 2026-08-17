@@ -1,5 +1,12 @@
 title = "Portfolio Secret Scanner — casonk"
 
+# Defining [[rules]] REPLACES the built-in ruleset unless the defaults are
+# extended explicitly. Without this block the portfolio rules below are the only
+# ones that run, so real credentials -- AWS keys, GitHub tokens, private keys --
+# scan clean. Keep this first: the custom rules are additions, not a substitute.
+[extend]
+useDefault = true
+
 # ─── Global allowlist ────────────────────────────────────────────────────────
 [allowlist]
 description = "Patterns that are safe to commit"
