@@ -332,10 +332,28 @@ class ActionOutcome:
     repair: WireGuardRestoreSummary
 
 
-class ThreadingUnixHTTPServer(socketserver.ThreadingMixIn, socketserver.UnixStreamServer):
-    """Threaded HTTP-over-Unix-socket server for the privileged control path."""
+# socketserver.UnixStreamServer only exists where socket.AF_UNIX does, so on
+# Windows the attribute is absent. Subclassing it unconditionally raised
+# AttributeError at import time, which made the whole module -- and therefore
+# `nordility --help` -- unusable on Windows, even though the documented Windows
+# backend never touches a Unix socket.
+#
+# Defining the class only where the base exists keeps the module importable
+# everywhere. The Unix-socket path is still unavailable on Windows, but that is
+# now reported when it is requested rather than by refusing to start at all.
+UNIX_SOCKETS_SUPPORTED = hasattr(socketserver, "UnixStreamServer")
 
-    daemon_threads = True
+if UNIX_SOCKETS_SUPPORTED:
+
+    class ThreadingUnixHTTPServer(  # type: ignore[misc]
+        socketserver.ThreadingMixIn, socketserver.UnixStreamServer
+    ):
+        """Threaded HTTP-over-Unix-socket server for the privileged control path."""
+
+        daemon_threads = True
+
+else:  # pragma: no cover - exercised only on platforms without AF_UNIX
+    ThreadingUnixHTTPServer = None  # type: ignore[assignment,misc]
 
 
 class NordilityWebController:
@@ -635,6 +653,12 @@ def run_web_server(args: argparse.Namespace) -> None:
     socket_path: Path | None = None
     socket_inode: int | None = None
     if args.unix_socket:
+        if not UNIX_SOCKETS_SUPPORTED:
+            raise SystemExit(
+                "--unix-socket is not available on this platform: it has no "
+                "AF_UNIX support. Run without --unix-socket to serve the "
+                "status-only TCP interface instead."
+            )
         trusted_origin = _validate_trusted_origin(args.trusted_origin or "")
         socket_path = Path(args.unix_socket)
         _validate_socket_parent(socket_path)
