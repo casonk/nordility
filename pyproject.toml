@@ -16,7 +16,11 @@ keywords = ["nordvpn", "vpn", "automation", "cli", "networking"]
 classifiers = [
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
+  # The README documents a Windows backend driving NordVPN.exe, so the package
+  # is not Linux-only. The privileged Unix-socket control path is POSIX-only and
+  # degrades to the status-only TCP interface elsewhere.
   "Operating System :: POSIX :: Linux",
+  "Operating System :: Microsoft :: Windows",
   "Topic :: System :: Networking",
   "Topic :: Utilities",
   "License :: OSI Approved :: MIT License",

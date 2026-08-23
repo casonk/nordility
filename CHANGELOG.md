@@ -4,6 +4,19 @@ All notable changes to `nordility` are documented here.
 
 ## Unreleased
 
+- Fixed the CLI being unusable on Windows. `web.py` subclassed
+  `socketserver.UnixStreamServer` at module scope, which only exists where
+  `AF_UNIX` does, so importing the module raised `AttributeError` and
+  `nordility --help` could not start — despite the README documenting a
+  Windows-first `NordVPN.exe` backend that never touches a Unix socket. The
+  class is now defined only where its base exists, and `--unix-socket` reports
+  a clear message on platforms without `AF_UNIX` instead of failing at import.
+- Declared `Operating System :: Microsoft :: Windows` alongside the existing
+  POSIX classifier, matching the documented Windows backend.
+- Added the shared `install-check` workflow, which installs the package on
+  Linux, macOS and Windows and runs the console script. It is what found the
+  import failure above.
+
 - Added `watch-wireguard` plus a systemd installer so NordVPN reconnects/rotates
   automatically re-apply the WireGuard fwmark and policy-routing rule needed for
   private tunnel replies.
