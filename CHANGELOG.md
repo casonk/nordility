@@ -4,6 +4,12 @@ All notable changes to `nordility` are documented here.
 
 ## Unreleased
 
+- Documented the project as platform-agnostic rather than Windows-first. The
+  README now carries a platform support table covering Linux, macOS and
+  Windows, separating what this package supports from what the underlying
+  NordVPN executable supports, and naming the features that are genuinely
+  OS-bound: `web --unix-socket` needs `AF_UNIX`, `watch-wireguard` needs Linux
+  policy routing and systemd, and `login --token` guards on `sys.platform`.
 - Fixed the CLI being unusable on Windows. `web.py` subclassed
   `socketserver.UnixStreamServer` at module scope, which only exists where
   `AF_UNIX` does, so importing the module raised `AttributeError` and

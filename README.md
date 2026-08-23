@@ -21,8 +21,10 @@ It also adds a usable CLI, packaging metadata, and a small test suite.
 
 ## Features
 
-- Windows-first support for the original `NordVPN.exe` automation flow
-- Optional support for the `nordvpn` terminal CLI through a selectable backend
+- Platform-agnostic VPN automation through two interchangeable backends: the
+  original `NordVPN.exe` flow on Windows, and the `nordvpn` terminal CLI on
+  Linux and macOS
+- Backend auto-detection, so the same commands work unchanged on each platform
 - Fast and full country pools for randomized server rotation
 - A NordVPN/WireGuard watch service that keeps private WireGuard access working
   after external NordVPN reconnects or rotates
@@ -30,11 +32,46 @@ It also adds a usable CLI, packaging metadata, and a small test suite.
 - No third-party runtime dependencies
 - Compatibility helpers that preserve the original function names
 
+## Platform support
+
+`nordility` began as a Windows-first tool wrapping `NordVPN.exe`. It is now
+platform-agnostic: the package installs and the CLI runs on Linux, macOS and
+Windows, verified on each by CI on every push.
+
+What limits a given command is rarely `nordility` itself. It drives whichever
+NordVPN executable is present, so support follows two separate questions: does
+this package run here, and is there a NordVPN binary for it to drive?
+
+| Feature | Linux | macOS | Windows |
+| --- | :---: | :---: | :---: |
+| Package installs, CLI runs, `--help` works | yes | yes | yes |
+| `NordVPN.exe` backend | — | — | yes |
+| `nordvpn` CLI backend | yes | if present | — |
+| `web` over TCP (status only) | yes | yes | yes |
+| `web --unix-socket` (privileged actions) | yes | yes | no |
+| `login --token` via KeePass | yes | no | no |
+| `watch-wireguard` and its systemd units | yes | no | no |
+
+Backend selection is by executable path, not by OS: a path ending in `.exe`
+selects the Windows backend, anything else selects the CLI backend. So macOS
+resolves to the CLI backend and works wherever a `nordvpn` binary is on `PATH`
+— NordVPN ships that CLI for Linux, so on macOS this depends on what you have
+installed rather than on anything here.
+
+The rest is the host OS having a facility or not. `web --unix-socket` needs
+`AF_UNIX`, which Windows does not provide; run `web` without it for the
+status-only TCP interface. `watch-wireguard` repairs Linux policy-routing rules
+and installs systemd units, so it is inherently Linux-only. `login --token`
+guards on `sys.platform` for the PTY and core-dump hardening it relies on.
+
+Where a feature is unavailable the CLI reports it and exits, rather than
+failing obscurely.
+
 ## Install
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate    # Windows: .venv\Scripts\activate
 pip install -e .
 ```
 
@@ -45,12 +82,22 @@ By default, `nordility` uses:
 - Windows backend: `C:/Program Files/NordVPN/NordVPN.exe`
 - CLI backend: `nordvpn`
 
-You can override the executable with either environment variable:
+You can override the executable with either environment variable. On Linux or
+macOS:
 
 ```bash
-export NORDILITY_EXECUTABLE="C:/Program Files/NordVPN/NordVPN.exe"
-export NORDILITY_BACKEND="windows"
+export NORDILITY_EXECUTABLE="/usr/bin/nordvpn"
+export NORDILITY_BACKEND="cli"
 ```
+
+On Windows:
+
+```powershell
+$env:NORDILITY_EXECUTABLE = "C:/Program Files/NordVPN/NordVPN.exe"
+$env:NORDILITY_BACKEND = "windows"
+```
+
+Neither is usually needed: `auto` infers the backend from the executable path.
 
 The accepted backends are:
 
