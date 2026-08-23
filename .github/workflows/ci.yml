@@ -3,6 +3,18 @@ name: CI
 on: [push, pull_request]
 
 jobs:
+  # Does the installed distribution work, on each OS we claim to support?
+  # python-ci below imports the source tree on ubuntu; this installs the package
+  # the way a user would and then runs the console script. pip writes that
+  # launcher without checking its entry point resolves, so the two can disagree.
+  install-check:
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    uses: casonk/.github/.github/workflows/install-check.yml@main
+    with:
+      # Floor and ceiling of requires-python = ">=3.10".
+      python-versions: '["3.10", "3.14"]'
+      install-extra: dev
+
   ci:
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     uses: casonk/.github/.github/workflows/python-ci.yml@main
