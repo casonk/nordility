@@ -1,4 +1,5 @@
 import random
+import shutil
 import sys
 import tempfile
 import unittest
@@ -192,7 +193,7 @@ class NordVPNClientTests(unittest.TestCase):
 
         self.assertEqual(
             recorded["command"],
-            (sys.executable, "-m", "nordility.token_login", "nordvpn"),
+            (sys.executable, "-m", "nordility.token_login", shutil.which("nordvpn") or "nordvpn"),
         )
         self.assertEqual(recorded["input"], f"{token}\n")
         self.assertNotIn(token, " ".join(recorded["command"]))
@@ -256,7 +257,10 @@ class NordVPNClientTests(unittest.TestCase):
             )
 
         self.assertEqual(calls[0], ("nordvpn", "connect"))
-        self.assertEqual(calls[1], (sys.executable, "-m", "nordility.token_login", "nordvpn"))
+        self.assertEqual(
+            calls[1],
+            (sys.executable, "-m", "nordility.token_login", shutil.which("nordvpn") or "nordvpn"),
+        )
         self.assertNotIn(token, " ".join(calls[1]))
         self.assertEqual(calls[2], ("nordvpn", "connect"))
         self.assertEqual(result.message, "VPN Connected")
@@ -491,6 +495,11 @@ class WireGuardRestoreTests(unittest.TestCase):
         def fake_runner(command, capture_output, text, check):
             if tuple(command) == ("wg", "show", "interfaces"):
                 return CompletedProcess(command, 0, stdout="", stderr="")
+            if tuple(command) in {
+                ("systemctl", "start", "wg-quick@wg0.service"),
+                ("sudo", "-n", "systemctl", "start", "wg-quick@wg0.service"),
+            }:
+                return CompletedProcess(command, 1, stdout="", stderr="not found")
             return CompletedProcess(command, 0, stdout="ok", stderr="")
 
         client = NordVPNClient(
