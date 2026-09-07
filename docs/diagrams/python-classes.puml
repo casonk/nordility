@@ -35,10 +35,14 @@ class "NordilityWebController" as src.nordility.web.NordilityWebController {
 }
 class "NordilityWebHandler" as src.nordility.web.make_handler.NordilityWebHandler {
   server_version : str
+  address_string() -> str
   do_GET() -> None
   do_HEAD() -> None
   do_POST() -> None
   log_message(fmt: str) -> None
+}
+class "ThreadingUnixHTTPServer" as src.nordility.web.ThreadingUnixHTTPServer {
+  daemon_threads : bool
 }
 class "WireGuardRestoreSummary" as src.nordility.client.WireGuardRestoreSummary {
   interfaces : tuple[str, ...]

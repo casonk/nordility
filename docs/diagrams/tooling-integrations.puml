@@ -5,75 +5,120 @@ skinparam shadowing false
 skinparam defaultFontName Monospace
 skinparam componentStyle rectangle
 skinparam linetype ortho
-rectangle ".github/workflows/ci.yml\n9 detected tools" as source_github_workflows_ci_yml #E0F2FE
-rectangle ".github/workflows/python-publish.yml\n7 detected tools" as source_github_workflows_python_publish_yml #E0F2FE
-rectangle ".github/workflows/secret-scan.yml\n2 detected tools" as source_github_workflows_secret_scan_yml #E0F2FE
-rectangle "scripts/install_autoconnect_service.sh\n6 detected tools" as source_scripts_install_autoconnect_service_sh #E0F2FE
-rectangle "scripts/install_web_service.sh\n5 detected tools" as source_scripts_install_web_service_sh #E0F2FE
-rectangle "scripts/install_wireguard_watch_service.sh\n3 detected tools" as source_scripts_install_wireguard_watch_service_sh #E0F2FE
+rectangle ".github/workflows/ci.yml\n2 detected tools" as source_github_workflows_ci_yml #E0F2FE
+rectangle ".github/workflows/python-publish.yml\n1 detected tool" as source_github_workflows_python_publish_yml #E0F2FE
+rectangle ".github/workflows/secret-scan.yml\n1 detected tool" as source_github_workflows_secret_scan_yml #E0F2FE
+rectangle "scripts/install_autoconnect_service.sh\n7 detected tools" as source_scripts_install_autoconnect_service_sh #E0F2FE
+rectangle "scripts/install_web_service.sh\n7 detected tools" as source_scripts_install_web_service_sh #E0F2FE
+rectangle "scripts/install_wireguard_watch_service.sh\n6 detected tools" as source_scripts_install_wireguard_watch_service_sh #E0F2FE
+rectangle "scripts/lib/install_runtime.sh\n19 detected tools" as source_scripts_lib_install_runtime_sh #E0F2FE
 rectangle "scripts/run_tachometer_profile.sh\n3 detected tools" as source_scripts_run_tachometer_profile_sh #E0F2FE
-cloud "actions/checkout" as tool_actions_checkout #FEF3C7
-cloud "actions/download-artifact" as tool_actions_download_artifact #FEF3C7
-cloud "actions/setup-python" as tool_actions_setup_python #FEF3C7
-cloud "actions/upload-artifact" as tool_actions_upload_artifact #FEF3C7
-cloud "auto_login_args+=(--keepass-entry" as tool_auto_login_args_keepass_entry #FEF3C7
-cloud "auto_login_args+=(--keepass-profile" as tool_auto_login_args_keepass_profile #FEF3C7
-cloud "black" as tool_black #FEF3C7
-cloud "build" as tool_build #FEF3C7
+rectangle "tests/containers/token-login/Containerfile\n6 detected tools" as source_tests_containers_token_login_containerfile #E0F2FE
+rectangle "tests/containers/token-login/run-test.sh\n5 detected tools" as source_tests_containers_token_login_run_test_sh #E0F2FE
+rectangle "tests/test_token_login_podman.sh\n1 detected tool" as source_tests_test_token_login_podman_sh #E0F2FE
+cloud "Nordility source file" as tool_nordility_source_file #FEF3C7
+cloud "Nordility source package" as tool_nordility_source_package #FEF3C7
+cloud "\\000" as tool_tool_000 #FEF3C7
+cloud "__init__.py" as tool_init___py #FEF3C7
+cloud "__main__.py" as tool_main___py #FEF3C7
+cloud "apt-get" as tool_apt_get #FEF3C7
+cloud "casonk/.github/.github/workflows/install-check.yml" as tool_casonk_github_github_workflows_install_check_yml #FEF3C7
+cloud "casonk/.github/.github/workflows/python-ci.yml" as tool_casonk_github_github_workflows_python_ci_yml #FEF3C7
+cloud "casonk/.github/.github/workflows/python-publish.yml" as tool_casonk_github_github_workflows_python_publish_yml #FEF3C7
+cloud "casonk/.github/.github/workflows/secret-scan.yml" as tool_casonk_github_github_workflows_secret_scan_yml #FEF3C7
 cloud "cat" as tool_cat #FEF3C7
+cloud "cc" as tool_cc #FEF3C7
+cloud "chmod" as tool_chmod #FEF3C7
+cloud "chown" as tool_chown #FEF3C7
+cloud "cli.py" as tool_cli_py #FEF3C7
+cloud "client.py" as tool_client_py #FEF3C7
 cloud "connect_args+=(--group" as tool_connect_args_group #FEF3C7
-cloud "connect_args+=(--keepass-entry" as tool_connect_args_keepass_entry #FEF3C7
-cloud "connect_args+=(--keepass-profile" as tool_connect_args_keepass_profile #FEF3C7
-cloud "gitleaks/gitleaks-action" as tool_gitleaks_gitleaks_action #FEF3C7
+cloud "docker" as tool_docker #FEF3C7
+cloud "getent" as tool_getent #FEF3C7
+cloud "head" as tool_head #FEF3C7
 cloud "install" as tool_install #FEF3C7
-cloud "ls-files" as tool_ls_files #FEF3C7
-cloud "pip" as tool_pip #FEF3C7
-cloud "pylint" as tool_pylint #FEF3C7
-cloud "pypa/gh-action-pypi-publish" as tool_pypa_gh_action_pypi_publish #FEF3C7
-cloud "pytest" as tool_pytest #FEF3C7
-cloud "ruff" as tool_ruff #FEF3C7
+cloud "mv" as tool_mv #FEF3C7
+cloud "nordility" as tool_nordility #FEF3C7
+cloud "nordility_require_install_tools" as tool_nordility_require_install_tools #FEF3C7
+cloud "nordility_require_single_line" as tool_nordility_require_single_line #FEF3C7
+cloud "nordility_stage_runtime" as tool_nordility_stage_runtime #FEF3C7
+cloud "podman" as tool_podman #FEF3C7
+cloud "protected runtime file" as tool_protected_runtime_file #FEF3C7
+cloud "protected runtime package" as tool_protected_runtime_package #FEF3C7
+cloud "protected runtime root" as tool_protected_runtime_root #FEF3C7
+cloud "protected runtime source root" as tool_protected_runtime_source_root #FEF3C7
+cloud "repository root" as tool_repository_root #FEF3C7
+cloud "rm" as tool_rm #FEF3C7
 cloud "run" as tool_run #FEF3C7
+cloud "sleep" as tool_sleep #FEF3C7
+cloud "source root" as tool_source_root #FEF3C7
+cloud "staged runtime file" as tool_staged_runtime_file #FEF3C7
 cloud "summarize" as tool_summarize #FEF3C7
 cloud "systemctl" as tool_systemctl #FEF3C7
 cloud "tachometer" as tool_tachometer #FEF3C7
-cloud "tee" as tool_tee #FEF3C7
-source_github_workflows_ci_yml --> tool_actions_checkout
-source_github_workflows_ci_yml --> tool_actions_setup_python
-source_github_workflows_ci_yml --> tool_black
-source_github_workflows_ci_yml --> tool_ls_files
-source_github_workflows_ci_yml --> tool_pip
-source_github_workflows_ci_yml --> tool_pylint
-source_github_workflows_ci_yml --> tool_pytest
-source_github_workflows_ci_yml --> tool_ruff
-source_github_workflows_ci_yml --> tool_tee
-source_github_workflows_python_publish_yml --> tool_actions_checkout
-source_github_workflows_python_publish_yml --> tool_actions_download_artifact
-source_github_workflows_python_publish_yml --> tool_actions_setup_python
-source_github_workflows_python_publish_yml --> tool_actions_upload_artifact
-source_github_workflows_python_publish_yml --> tool_build
-source_github_workflows_python_publish_yml --> tool_pip
-source_github_workflows_python_publish_yml --> tool_pypa_gh_action_pypi_publish
-source_github_workflows_secret_scan_yml --> tool_actions_checkout
-source_github_workflows_secret_scan_yml --> tool_gitleaks_gitleaks_action
+cloud "token_login.py" as tool_token_login_py #FEF3C7
+cloud "tr" as tool_tr #FEF3C7
+cloud "web.py" as tool_web_py #FEF3C7
+source_github_workflows_ci_yml --> tool_casonk_github_github_workflows_install_check_yml
+source_github_workflows_ci_yml --> tool_casonk_github_github_workflows_python_ci_yml
+source_github_workflows_python_publish_yml --> tool_casonk_github_github_workflows_python_publish_yml
+source_github_workflows_secret_scan_yml --> tool_casonk_github_github_workflows_secret_scan_yml
 source_scripts_install_autoconnect_service_sh --> tool_cat
 source_scripts_install_autoconnect_service_sh --> tool_connect_args_group
-source_scripts_install_autoconnect_service_sh --> tool_connect_args_keepass_entry
-source_scripts_install_autoconnect_service_sh --> tool_connect_args_keepass_profile
 source_scripts_install_autoconnect_service_sh --> tool_install
+source_scripts_install_autoconnect_service_sh --> tool_nordility_require_install_tools
+source_scripts_install_autoconnect_service_sh --> tool_nordility_require_single_line
+source_scripts_install_autoconnect_service_sh --> tool_nordility_stage_runtime
 source_scripts_install_autoconnect_service_sh --> tool_systemctl
-source_scripts_install_web_service_sh --> tool_auto_login_args_keepass_entry
-source_scripts_install_web_service_sh --> tool_auto_login_args_keepass_profile
 source_scripts_install_web_service_sh --> tool_cat
+source_scripts_install_web_service_sh --> tool_getent
 source_scripts_install_web_service_sh --> tool_install
+source_scripts_install_web_service_sh --> tool_nordility_require_install_tools
+source_scripts_install_web_service_sh --> tool_nordility_require_single_line
+source_scripts_install_web_service_sh --> tool_nordility_stage_runtime
 source_scripts_install_web_service_sh --> tool_systemctl
 source_scripts_install_wireguard_watch_service_sh --> tool_cat
 source_scripts_install_wireguard_watch_service_sh --> tool_install
+source_scripts_install_wireguard_watch_service_sh --> tool_nordility_require_install_tools
+source_scripts_install_wireguard_watch_service_sh --> tool_nordility_require_single_line
+source_scripts_install_wireguard_watch_service_sh --> tool_nordility_stage_runtime
 source_scripts_install_wireguard_watch_service_sh --> tool_systemctl
+source_scripts_lib_install_runtime_sh --> tool_nordility_source_file
+source_scripts_lib_install_runtime_sh --> tool_nordility_source_package
+source_scripts_lib_install_runtime_sh --> tool_init___py
+source_scripts_lib_install_runtime_sh --> tool_main___py
+source_scripts_lib_install_runtime_sh --> tool_chmod
+source_scripts_lib_install_runtime_sh --> tool_chown
+source_scripts_lib_install_runtime_sh --> tool_cli_py
+source_scripts_lib_install_runtime_sh --> tool_client_py
+source_scripts_lib_install_runtime_sh --> tool_mv
+source_scripts_lib_install_runtime_sh --> tool_protected_runtime_file
+source_scripts_lib_install_runtime_sh --> tool_protected_runtime_package
+source_scripts_lib_install_runtime_sh --> tool_protected_runtime_root
+source_scripts_lib_install_runtime_sh --> tool_protected_runtime_source_root
+source_scripts_lib_install_runtime_sh --> tool_repository_root
+source_scripts_lib_install_runtime_sh --> tool_rm
+source_scripts_lib_install_runtime_sh --> tool_source_root
+source_scripts_lib_install_runtime_sh --> tool_staged_runtime_file
+source_scripts_lib_install_runtime_sh --> tool_token_login_py
+source_scripts_lib_install_runtime_sh --> tool_web_py
 source_scripts_run_tachometer_profile_sh --> tool_run
 source_scripts_run_tachometer_profile_sh --> tool_summarize
 source_scripts_run_tachometer_profile_sh --> tool_tachometer
+source_tests_containers_token_login_containerfile --> tool_apt_get
+source_tests_containers_token_login_containerfile --> tool_cc
+source_tests_containers_token_login_containerfile --> tool_chmod
+source_tests_containers_token_login_containerfile --> tool_chown
+source_tests_containers_token_login_containerfile --> tool_docker
+source_tests_containers_token_login_containerfile --> tool_rm
+source_tests_containers_token_login_run_test_sh --> tool_tool_000
+source_tests_containers_token_login_run_test_sh --> tool_head
+source_tests_containers_token_login_run_test_sh --> tool_nordility
+source_tests_containers_token_login_run_test_sh --> tool_sleep
+source_tests_containers_token_login_run_test_sh --> tool_tr
+source_tests_test_token_login_podman_sh --> tool_podman
 note as toolingGraphSummary
-Scanned 7 tooling entrypoints.
-Detected 25 third-party tools.
+Scanned 11 tooling entrypoints.
+Detected 43 third-party tools.
 end note
 @enduml
