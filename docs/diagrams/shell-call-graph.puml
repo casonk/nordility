@@ -5,41 +5,100 @@ skinparam shadowing false
 skinparam defaultFontName Monospace
 skinparam componentStyle rectangle
 skinparam linetype ortho
-rectangle "scripts/install_autoconnect_service.sh\n0 local shell edges\n6 external tools" as shell_scripts_install_autoconnect_service_sh #DBEAFE
-rectangle "scripts/install_web_service.sh\n0 local shell edges\n5 external tools" as shell_scripts_install_web_service_sh #DBEAFE
-rectangle "scripts/install_wireguard_watch_service.sh\n0 local shell edges\n3 external tools" as shell_scripts_install_wireguard_watch_service_sh #DBEAFE
+rectangle "scripts/install_autoconnect_service.sh\n0 local shell edges\n7 external tools" as shell_scripts_install_autoconnect_service_sh #DBEAFE
+rectangle "scripts/install_web_service.sh\n0 local shell edges\n7 external tools" as shell_scripts_install_web_service_sh #DBEAFE
+rectangle "scripts/install_wireguard_watch_service.sh\n0 local shell edges\n6 external tools" as shell_scripts_install_wireguard_watch_service_sh #DBEAFE
+rectangle "scripts/lib/install_runtime.sh\n0 local shell edges\n19 external tools" as shell_scripts_lib_install_runtime_sh #DBEAFE
 rectangle "scripts/run_tachometer_profile.sh\n0 local shell edges\n3 external tools" as shell_scripts_run_tachometer_profile_sh #DBEAFE
-cloud "auto_login_args+=(--keepass-entry" as tool_auto_login_args_keepass_entry #FEF3C7
-cloud "auto_login_args+=(--keepass-profile" as tool_auto_login_args_keepass_profile #FEF3C7
+rectangle "tests/containers/token-login/run-test.sh\n0 local shell edges\n5 external tools" as shell_tests_containers_token_login_run_test_sh #DBEAFE
+rectangle "tests/test_token_login_podman.sh\n0 local shell edges\n1 external tool" as shell_tests_test_token_login_podman_sh #DBEAFE
+cloud "Nordility source file" as tool_nordility_source_file #FEF3C7
+cloud "Nordility source package" as tool_nordility_source_package #FEF3C7
+cloud "\\000" as tool_tool_000 #FEF3C7
+cloud "__init__.py" as tool_init___py #FEF3C7
+cloud "__main__.py" as tool_main___py #FEF3C7
 cloud "cat" as tool_cat #FEF3C7
+cloud "chmod" as tool_chmod #FEF3C7
+cloud "chown" as tool_chown #FEF3C7
+cloud "cli.py" as tool_cli_py #FEF3C7
+cloud "client.py" as tool_client_py #FEF3C7
 cloud "connect_args+=(--group" as tool_connect_args_group #FEF3C7
-cloud "connect_args+=(--keepass-entry" as tool_connect_args_keepass_entry #FEF3C7
-cloud "connect_args+=(--keepass-profile" as tool_connect_args_keepass_profile #FEF3C7
+cloud "getent" as tool_getent #FEF3C7
+cloud "head" as tool_head #FEF3C7
 cloud "install" as tool_install #FEF3C7
+cloud "mv" as tool_mv #FEF3C7
+cloud "nordility" as tool_nordility #FEF3C7
+cloud "nordility_require_install_tools" as tool_nordility_require_install_tools #FEF3C7
+cloud "nordility_require_single_line" as tool_nordility_require_single_line #FEF3C7
+cloud "nordility_stage_runtime" as tool_nordility_stage_runtime #FEF3C7
+cloud "podman" as tool_podman #FEF3C7
+cloud "protected runtime file" as tool_protected_runtime_file #FEF3C7
+cloud "protected runtime package" as tool_protected_runtime_package #FEF3C7
+cloud "protected runtime root" as tool_protected_runtime_root #FEF3C7
+cloud "protected runtime source root" as tool_protected_runtime_source_root #FEF3C7
+cloud "repository root" as tool_repository_root #FEF3C7
+cloud "rm" as tool_rm #FEF3C7
 cloud "run" as tool_run #FEF3C7
+cloud "sleep" as tool_sleep #FEF3C7
+cloud "source root" as tool_source_root #FEF3C7
+cloud "staged runtime file" as tool_staged_runtime_file #FEF3C7
 cloud "summarize" as tool_summarize #FEF3C7
 cloud "systemctl" as tool_systemctl #FEF3C7
 cloud "tachometer" as tool_tachometer #FEF3C7
+cloud "token_login.py" as tool_token_login_py #FEF3C7
+cloud "tr" as tool_tr #FEF3C7
+cloud "web.py" as tool_web_py #FEF3C7
 shell_scripts_install_autoconnect_service_sh --> tool_cat
 shell_scripts_install_autoconnect_service_sh --> tool_connect_args_group
-shell_scripts_install_autoconnect_service_sh --> tool_connect_args_keepass_entry
-shell_scripts_install_autoconnect_service_sh --> tool_connect_args_keepass_profile
 shell_scripts_install_autoconnect_service_sh --> tool_install
+shell_scripts_install_autoconnect_service_sh --> tool_nordility_require_install_tools
+shell_scripts_install_autoconnect_service_sh --> tool_nordility_require_single_line
+shell_scripts_install_autoconnect_service_sh --> tool_nordility_stage_runtime
 shell_scripts_install_autoconnect_service_sh --> tool_systemctl
-shell_scripts_install_web_service_sh --> tool_auto_login_args_keepass_entry
-shell_scripts_install_web_service_sh --> tool_auto_login_args_keepass_profile
 shell_scripts_install_web_service_sh --> tool_cat
+shell_scripts_install_web_service_sh --> tool_getent
 shell_scripts_install_web_service_sh --> tool_install
+shell_scripts_install_web_service_sh --> tool_nordility_require_install_tools
+shell_scripts_install_web_service_sh --> tool_nordility_require_single_line
+shell_scripts_install_web_service_sh --> tool_nordility_stage_runtime
 shell_scripts_install_web_service_sh --> tool_systemctl
 shell_scripts_install_wireguard_watch_service_sh --> tool_cat
 shell_scripts_install_wireguard_watch_service_sh --> tool_install
+shell_scripts_install_wireguard_watch_service_sh --> tool_nordility_require_install_tools
+shell_scripts_install_wireguard_watch_service_sh --> tool_nordility_require_single_line
+shell_scripts_install_wireguard_watch_service_sh --> tool_nordility_stage_runtime
 shell_scripts_install_wireguard_watch_service_sh --> tool_systemctl
+shell_scripts_lib_install_runtime_sh --> tool_nordility_source_file
+shell_scripts_lib_install_runtime_sh --> tool_nordility_source_package
+shell_scripts_lib_install_runtime_sh --> tool_init___py
+shell_scripts_lib_install_runtime_sh --> tool_main___py
+shell_scripts_lib_install_runtime_sh --> tool_chmod
+shell_scripts_lib_install_runtime_sh --> tool_chown
+shell_scripts_lib_install_runtime_sh --> tool_cli_py
+shell_scripts_lib_install_runtime_sh --> tool_client_py
+shell_scripts_lib_install_runtime_sh --> tool_mv
+shell_scripts_lib_install_runtime_sh --> tool_protected_runtime_file
+shell_scripts_lib_install_runtime_sh --> tool_protected_runtime_package
+shell_scripts_lib_install_runtime_sh --> tool_protected_runtime_root
+shell_scripts_lib_install_runtime_sh --> tool_protected_runtime_source_root
+shell_scripts_lib_install_runtime_sh --> tool_repository_root
+shell_scripts_lib_install_runtime_sh --> tool_rm
+shell_scripts_lib_install_runtime_sh --> tool_source_root
+shell_scripts_lib_install_runtime_sh --> tool_staged_runtime_file
+shell_scripts_lib_install_runtime_sh --> tool_token_login_py
+shell_scripts_lib_install_runtime_sh --> tool_web_py
 shell_scripts_run_tachometer_profile_sh --> tool_run
 shell_scripts_run_tachometer_profile_sh --> tool_summarize
 shell_scripts_run_tachometer_profile_sh --> tool_tachometer
+shell_tests_containers_token_login_run_test_sh --> tool_tool_000
+shell_tests_containers_token_login_run_test_sh --> tool_head
+shell_tests_containers_token_login_run_test_sh --> tool_nordility
+shell_tests_containers_token_login_run_test_sh --> tool_sleep
+shell_tests_containers_token_login_run_test_sh --> tool_tr
+shell_tests_test_token_login_podman_sh --> tool_podman
 note as shellGraphSummary
-Scanned 4 shell scripts.
+Scanned 7 shell scripts.
 Detected 0 local shell edges.
-Detected 11 external tools.
+Detected 36 external tools.
 end note
 @enduml
