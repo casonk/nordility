@@ -285,28 +285,88 @@ INDEX_HTML = """<!doctype html>
       setBusy(false);
     }
 
-    async function refresh() {
-      const response = await fetch("/api/status", {cache: "no-store"});
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "status failed");
-      renderStatus(data);
+    let messageIsError = false;
+
+    async function refresh(timeoutMs) {
+      const controller = timeoutMs ? new AbortController() : null;
+      const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+      try {
+        const response = await fetch("/api/status", {
+          cache: "no-store",
+          signal: controller ? controller.signal : undefined
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "status failed");
+        renderStatus(data);
+        if (messageIsError) {
+          $("message").textContent = "";
+          messageIsError = false;
+        }
+      } finally {
+        if (timer) clearTimeout(timer);
+      }
     }
+
+    function delay(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    // The action itself is not safe to retry (re-sending "connect"/"rotate"
+    // would trigger a second, unwanted VPN switch). But NordVPN's own connect
+    // can briefly disrupt the network path this page is served over, so a
+    // "failed to fetch" on the action often just means the response never
+    // made it back -- the action already ran. Before surfacing that as an
+    // error, poll the read-only status endpoint a few times; if it recovers,
+    // the action succeeded and there is nothing to report. Each attempt is
+    // timeout-bounded so a single stalled connection cannot block the whole
+    // loop -- and the caller -- indefinitely.
+    async function statusRecovered(attempts = 4, intervalMs = 1500, timeoutMs = 4000) {
+      for (let attempt = 0; attempt < attempts; attempt += 1) {
+        await delay(intervalMs);
+        try {
+          await refresh(timeoutMs);
+          return true;
+        } catch (error) {
+          // keep retrying until attempts are exhausted
+        }
+      }
+      return false;
+    }
+
+    // Generous enough to cover a "full" rotation (up to 30s server-side wait)
+    // plus command and WireGuard-repair time, but bounded so a connection
+    // that stalls silently (dropped rather than reset, which is what a
+    // routing change during "nordvpn connect" tends to do) cannot leave the
+    // button stuck on "Working..." forever.
+    const ACTION_TIMEOUT_MS = 90000;
 
     async function action(payload) {
       if (busy) return;
       setBusy(true);
       try {
-        const response = await fetch("/api/action", {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify(payload)
-        });
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), ACTION_TIMEOUT_MS);
+        let response;
+        try {
+          response = await fetch("/api/action", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(payload),
+            signal: controller.signal
+          });
+        } finally {
+          clearTimeout(timer);
+        }
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "action failed");
         $("message").textContent = data.message || "Done";
+        messageIsError = false;
         renderStatus(data.status);
       } catch (error) {
-        $("message").textContent = error.message;
+        if (!(await statusRecovered())) {
+          $("message").textContent = error.message;
+          messageIsError = true;
+        }
       } finally {
         setBusy(false);
       }
@@ -318,7 +378,7 @@ INDEX_HTML = """<!doctype html>
     $("rotate-full").addEventListener("click", () => action({action: "rotate", speed: "full"}));
     $("connect-group").addEventListener("click", () => action({action: "connect", group: $("group").value}));
 
-    refresh().catch((error) => $("message").textContent = error.message);
+    refresh().catch((error) => { $("message").textContent = error.message; messageIsError = true; });
     setInterval(() => { if (!busy) refresh().catch(() => {}); }, 8000);
   </script>
 </body>
@@ -533,20 +593,20 @@ def make_handler(
                 self.send_error(HTTPStatus.NOT_FOUND, "not found")
                 return
             if not actions_enabled or trusted_origin is None:
-                self._send_json(
+                self._send_json_safe(
                     HTTPStatus.FORBIDDEN,
                     {"error": "mutating actions require the protected Unix-socket transport"},
                 )
                 return
             if self.headers.get("Origin") != trusted_origin:
-                self._send_json(HTTPStatus.FORBIDDEN, {"error": "untrusted request origin"})
+                self._send_json_safe(HTTPStatus.FORBIDDEN, {"error": "untrusted request origin"})
                 return
             if self.headers.get("Host") != urlsplit(trusted_origin).netloc:
-                self._send_json(HTTPStatus.FORBIDDEN, {"error": "untrusted request host"})
+                self._send_json_safe(HTTPStatus.FORBIDDEN, {"error": "untrusted request host"})
                 return
             content_type = self.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
             if content_type != "application/json":
-                self._send_json(
+                self._send_json_safe(
                     HTTPStatus.UNSUPPORTED_MEDIA_TYPE,
                     {"error": "actions require application/json"},
                 )
@@ -554,19 +614,22 @@ def make_handler(
             try:
                 payload = self._read_json()
                 outcome = controller.perform_action(payload)
-                self._send_json(
-                    HTTPStatus.OK,
-                    {
-                        "message": outcome.result.message + outcome.repair.message_suffix(),
-                        "repair": outcome.repair.describe(),
-                        "status": controller.status(),
-                    },
-                )
             except NordilityError as exc:
-                self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+                self._send_json_safe(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+                return
             except Exception as exc:  # pragma: no cover - runtime guard
                 LOGGER.exception("web action failed")
-                self._send_json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(exc)})
+                self._send_json_safe(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(exc)})
+                return
+
+            self._send_json_safe(
+                HTTPStatus.OK,
+                {
+                    "message": outcome.result.message + outcome.repair.message_suffix(),
+                    "repair": outcome.repair.describe(),
+                    "status": controller.status(),
+                },
+            )
 
         def log_message(self, fmt: str, *args: object) -> None:
             LOGGER.info("%s - %s", self.address_string(), fmt % args)
@@ -588,6 +651,19 @@ def make_handler(
 
         def _send_json(self, status: HTTPStatus, data: dict[str, Any]) -> None:
             self._send_bytes(status, _json_bytes(data), "application/json; charset=utf-8")
+
+        def _send_json_safe(self, status: HTTPStatus, data: dict[str, Any]) -> None:
+            """Send a JSON response, tolerating a client that has already gone away.
+
+            Mutating actions can run long enough (NordVPN reconnect plus the
+            WireGuard repair pass) that the caller's connection drops before the
+            response is written. That is not an action failure -- the action
+            already ran -- so it must not be logged or retried as one.
+            """
+            try:
+                self._send_json(status, data)
+            except (BrokenPipeError, ConnectionError) as exc:
+                LOGGER.info("client disconnected before the response could be sent: %s", exc)
 
         def _send_bytes(self, status: HTTPStatus, body: bytes, content_type: str) -> None:
             self._send_headers(status, len(body), content_type)
