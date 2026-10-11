@@ -4,6 +4,7 @@ import tempfile
 import threading
 import unittest
 import urllib.error
+from http import HTTPStatus
 from pathlib import Path
 from subprocess import CompletedProcess
 from unittest import mock
@@ -288,6 +289,27 @@ class NordilityWebTransportTests(unittest.TestCase):
         )
         self.assertEqual(ok_status, 200)
         controller.perform_action.assert_called_once_with({"action": "disconnect"})
+
+    def test_action_response_tolerates_client_disconnect(self) -> None:
+        # A mutating action can run long enough (NordVPN reconnect plus the
+        # WireGuard repair pass) that the caller has already given up by the
+        # time the response is written. That must not be logged or retried
+        # as an action failure, since the action itself already succeeded.
+        origin = "https://nordility.clockwork.internal"
+        controller = mock.Mock()
+        controller.perform_action.return_value = ActionOutcome(
+            result=CommandResult(command=("nordvpn", "disconnect"), message="VPN Disconnected"),
+            repair=WireGuardRestoreSummary(),
+        )
+        controller.status.return_value = {"groups": {"fast": [], "full": []}}
+        handler_cls = make_handler(controller, actions_enabled=True, trusted_origin=origin)
+        handler = handler_cls.__new__(handler_cls)
+
+        with mock.patch.object(handler, "_send_json", side_effect=BrokenPipeError()):
+            with self.assertLogs("nordility.web", level="INFO") as logs:
+                handler._send_json_safe(HTTPStatus.OK, {"message": "done"})
+
+        self.assertTrue(any("disconnected" in message for message in logs.output))
 
     def test_trusted_origin_must_be_one_https_origin(self) -> None:
         self.assertEqual(
