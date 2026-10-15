@@ -10,8 +10,7 @@
   "Secret": "infra",
   "File": "config/auto-pass.example.ini",
   "SymlinkFile": "",
-  "Commit": "d9170bdff34b340cbc197e87206d4202562f74d0",
-  "Link": "https://github.com/casonk/nordility/blob/d9170bdff34b340cbc197e87206d4202562f74d0/config/auto-pass.example.ini#L5",
+  "Commit": "5ad27cb7e6475ba95e6d9cbd9cb6a2f20f6fabc1",
   "Entropy": 2.321928,
   "Author": "Cason Konzer",
   "Email": "72440835+casonk@users.noreply.github.com",
@@ -21,7 +20,7 @@
    "keepass",
    "sensitive-config"
   ],
-  "Fingerprint": "d9170bdff34b340cbc197e87206d4202562f74d0:config/auto-pass.example.ini:keepass-real-profile-name:5"
+  "Fingerprint": "5ad27cb7e6475ba95e6d9cbd9cb6a2f20f6fabc1:config/auto-pass.example.ini:keepass-real-profile-name:5"
  },
  {
   "RuleID": "keepass-real-profile-name",
@@ -34,8 +33,7 @@
   "Secret": "infra",
   "File": "tests/test_cli.py",
   "SymlinkFile": "",
-  "Commit": "d9170bdff34b340cbc197e87206d4202562f74d0",
-  "Link": "https://github.com/casonk/nordility/blob/d9170bdff34b340cbc197e87206d4202562f74d0/tests/test_cli.py#L34",
+  "Commit": "5ad27cb7e6475ba95e6d9cbd9cb6a2f20f6fabc1",
   "Entropy": 2.321928,
   "Author": "Cason Konzer",
   "Email": "72440835+casonk@users.noreply.github.com",
@@ -45,31 +43,7 @@
    "keepass",
    "sensitive-config"
   ],
-  "Fingerprint": "d9170bdff34b340cbc197e87206d4202562f74d0:tests/test_cli.py:keepass-real-profile-name:34"
- },
- {
-  "RuleID": "keepass-real-profile-name",
-  "Description": "Real KeePass profile name committed to a config or example file",
-  "StartLine": 50,
-  "EndLine": 50,
-  "StartColumn": 22,
-  "EndColumn": 36,
-  "Match": "profile=\"infra\"",
-  "Secret": "infra",
-  "File": "tests/test_web.py",
-  "SymlinkFile": "",
-  "Commit": "fcaa43560faafe2f98c44e057f768d3c46e783bf",
-  "Link": "https://github.com/casonk/nordility/blob/fcaa43560faafe2f98c44e057f768d3c46e783bf/tests/test_web.py#L50",
-  "Entropy": 2.321928,
-  "Author": "Cason Konzer",
-  "Email": "72440835+casonk@users.noreply.github.com",
-  "Date": "2026-05-03T14:29:58Z",
-  "Message": "feat: add watch-wireguard service and localhost web control surface\n\nAdd nordility watch-wireguard to detect NordVPN reconnects and repair\nWireGuard policy routing, plus nordility web for iPhone/Safari-accessible\nVPN control behind wiring-harness Caddy/mTLS. Include systemd installer\nscripts, test coverage, updated docs/CHANGELOG, and diagram refreshes.",
-  "Tags": [
-   "keepass",
-   "sensitive-config"
-  ],
-  "Fingerprint": "fcaa43560faafe2f98c44e057f768d3c46e783bf:tests/test_web.py:keepass-real-profile-name:50"
+  "Fingerprint": "5ad27cb7e6475ba95e6d9cbd9cb6a2f20f6fabc1:tests/test_cli.py:keepass-real-profile-name:34"
  },
  {
   "RuleID": "keepass-real-profile-name",
@@ -82,8 +56,7 @@
   "Secret": "infra",
   "File": "tests/test_cli.py",
   "SymlinkFile": "",
-  "Commit": "d9170bdff34b340cbc197e87206d4202562f74d0",
-  "Link": "https://github.com/casonk/nordility/blob/d9170bdff34b340cbc197e87206d4202562f74d0/tests/test_cli.py#L89",
+  "Commit": "5ad27cb7e6475ba95e6d9cbd9cb6a2f20f6fabc1",
   "Entropy": 2.321928,
   "Author": "Cason Konzer",
   "Email": "72440835+casonk@users.noreply.github.com",
@@ -93,7 +66,7 @@
    "keepass",
    "sensitive-config"
   ],
-  "Fingerprint": "d9170bdff34b340cbc197e87206d4202562f74d0:tests/test_cli.py:keepass-real-profile-name:89"
+  "Fingerprint": "5ad27cb7e6475ba95e6d9cbd9cb6a2f20f6fabc1:tests/test_cli.py:keepass-real-profile-name:89"
  },
  {
   "RuleID": "keepass-real-profile-name",
@@ -106,8 +79,7 @@
   "Secret": "infra",
   "File": "tests/test_cli.py",
   "SymlinkFile": "",
-  "Commit": "d9170bdff34b340cbc197e87206d4202562f74d0",
-  "Link": "https://github.com/casonk/nordility/blob/d9170bdff34b340cbc197e87206d4202562f74d0/tests/test_cli.py#L107",
+  "Commit": "5ad27cb7e6475ba95e6d9cbd9cb6a2f20f6fabc1",
   "Entropy": 2.321928,
   "Author": "Cason Konzer",
   "Email": "72440835+casonk@users.noreply.github.com",
@@ -117,7 +89,7 @@
    "keepass",
    "sensitive-config"
   ],
-  "Fingerprint": "d9170bdff34b340cbc197e87206d4202562f74d0:tests/test_cli.py:keepass-real-profile-name:107"
+  "Fingerprint": "5ad27cb7e6475ba95e6d9cbd9cb6a2f20f6fabc1:tests/test_cli.py:keepass-real-profile-name:107"
  },
  {
   "RuleID": "keepass-real-profile-name",
@@ -130,8 +102,7 @@
   "Secret": "infra",
   "File": "tests/test_cli.py",
   "SymlinkFile": "",
-  "Commit": "d9170bdff34b340cbc197e87206d4202562f74d0",
-  "Link": "https://github.com/casonk/nordility/blob/d9170bdff34b340cbc197e87206d4202562f74d0/tests/test_cli.py#L127",
+  "Commit": "5ad27cb7e6475ba95e6d9cbd9cb6a2f20f6fabc1",
   "Entropy": 2.321928,
   "Author": "Cason Konzer",
   "Email": "72440835+casonk@users.noreply.github.com",
@@ -141,6 +112,29 @@
    "keepass",
    "sensitive-config"
   ],
-  "Fingerprint": "d9170bdff34b340cbc197e87206d4202562f74d0:tests/test_cli.py:keepass-real-profile-name:127"
+  "Fingerprint": "5ad27cb7e6475ba95e6d9cbd9cb6a2f20f6fabc1:tests/test_cli.py:keepass-real-profile-name:127"
+ },
+ {
+  "RuleID": "keepass-real-profile-name",
+  "Description": "Real KeePass profile name committed to a config or example file",
+  "StartLine": 50,
+  "EndLine": 50,
+  "StartColumn": 22,
+  "EndColumn": 36,
+  "Match": "profile=\"infra\"",
+  "Secret": "infra",
+  "File": "tests/test_web.py",
+  "SymlinkFile": "",
+  "Commit": "fcf0dc6e3fc2bfdd8d3ffbc1ba323bad87d4a2d8",
+  "Entropy": 2.321928,
+  "Author": "Cason Konzer",
+  "Email": "72440835+casonk@users.noreply.github.com",
+  "Date": "2026-05-03T14:29:58Z",
+  "Message": "feat: add watch-wireguard service and localhost web control surface\n\nAdd nordility watch-wireguard to detect NordVPN reconnects and repair\nWireGuard policy routing, plus nordility web for iPhone/Safari-accessible\nVPN control behind wiring-harness Caddy/mTLS. Include systemd installer\nscripts, test coverage, updated docs/CHANGELOG, and diagram refreshes.",
+  "Tags": [
+   "keepass",
+   "sensitive-config"
+  ],
+  "Fingerprint": "fcf0dc6e3fc2bfdd8d3ffbc1ba323bad87d4a2d8:tests/test_web.py:keepass-real-profile-name:50"
  }
 ]
