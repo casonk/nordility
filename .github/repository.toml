@@ -1,0 +1,10 @@
+# GitHub repository settings, applied by traction-control's scripts/repo_settings.py.
+# Edit here, open a pull request, and run `repo_settings.py apply` after merge.
+
+[repository]
+# One line shown on GitHub. Keep it free of private repository names and local paths.
+description = "a small utility for automating (Nord) VPN switching"
+
+[main_branch]
+# Direct commits and pushes to main are refused unless this is true.
+allow_direct = false
