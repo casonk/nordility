@@ -69,6 +69,25 @@ failing obscurely.
 
 ## Install
 
+For the CLI and Python API:
+
+```bash
+python -m pip install nordility
+```
+
+On Linux, the optional KeePass-backed login also needs `auto-pass`:
+
+```bash
+python -m pip install 'nordility[secrets]'
+```
+
+The NordVPN application or `nordvpn` command must be installed separately.
+The package wheel contains the Python CLI and API. The systemd installers and
+tracked config examples below are repository files; clone the repository to
+use them.
+
+For development from a checkout:
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate    # Windows: .venv\Scripts\activate
@@ -107,7 +126,15 @@ The accepted backends are:
 
 `auto` infers `windows` for `.exe` executables and `cli` otherwise.
 
-For auto-pass-backed login defaults, copy [`config/auto-pass.example.ini`](config/auto-pass.example.ini) to `config/auto-pass.ini`. The CLI will use that file as the default `--keepass-profile` and `--keepass-entry` source for `login`, `connect --auto-login`, and `change --auto-login`.
+For auto-pass-backed login defaults in a repository checkout, copy
+[`config/auto-pass.example.ini`](config/auto-pass.example.ini) to
+`config/auto-pass.ini`. The CLI will use that file as the default
+`--keepass-profile` and `--keepass-entry` source for `login`,
+`connect --auto-login`, and `change --auto-login`. With a wheel installation,
+pass those options explicitly and configure auto-pass through its documented
+environment variables. The config file and sibling-checkout discovery are
+conveniences for the repository deployment, not prerequisites for the core
+package.
 
 Literal `--token` input is intentionally unsupported because it exposes the
 credential in the caller's process arguments. On Linux, KeePass-resolved
