@@ -36,6 +36,7 @@ nordility = "nordility.cli:main"
 
 
 [project.optional-dependencies]
+secrets = ["auto-pass>=0.1.0"]
 dev = [
     "pytest>=8",
     "ruff",
