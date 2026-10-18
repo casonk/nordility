@@ -36,11 +36,10 @@ nordility = "nordility.cli:main"
 
 
 [project.optional-dependencies]
-secrets = ["auto-pass>=0.1.0"]
 dev = [
     "pytest>=8",
     "ruff",
-    "dyno_lab @ git+https://github.com/casonk/dyno-lab.git",
+    "dyno-lab>=0.3.0",
 ]
 [tool.black]
 line-length = 100
