@@ -75,10 +75,11 @@ For the CLI and Python API:
 python -m pip install nordility
 ```
 
-On Linux, the optional KeePass-backed login also needs `auto-pass`:
+On Linux, the optional KeePass-backed login also needs `auto-pass`, currently
+installed from its source repository:
 
 ```bash
-python -m pip install 'nordility[secrets]'
+python -m pip install 'git+https://github.com/casonk/auto-pass.git'
 ```
 
 The NordVPN application or `nordvpn` command must be installed separately.
