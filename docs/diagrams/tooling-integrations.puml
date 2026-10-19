@@ -6,7 +6,7 @@ skinparam defaultFontName Monospace
 skinparam componentStyle rectangle
 skinparam linetype ortho
 rectangle ".github/workflows/ci.yml\n2 detected tools" as source_github_workflows_ci_yml #E0F2FE
-rectangle ".github/workflows/python-publish.yml\n1 detected tool" as source_github_workflows_python_publish_yml #E0F2FE
+rectangle ".github/workflows/python-publish.yml\n3 detected tools" as source_github_workflows_python_publish_yml #E0F2FE
 rectangle ".github/workflows/secret-scan.yml\n1 detected tool" as source_github_workflows_secret_scan_yml #E0F2FE
 rectangle "scripts/install_autoconnect_service.sh\n6 detected tools" as source_scripts_install_autoconnect_service_sh #E0F2FE
 rectangle "scripts/install_web_service.sh\n7 detected tools" as source_scripts_install_web_service_sh #E0F2FE
@@ -17,10 +17,11 @@ rectangle "tests/containers/token-login/Containerfile\n6 detected tools" as sour
 rectangle "tests/containers/token-login/run-test.sh\n5 detected tools" as source_tests_containers_token_login_run_test_sh #E0F2FE
 rectangle "tests/test_token_login_podman.sh\n1 detected tool" as source_tests_test_token_login_podman_sh #E0F2FE
 cloud "\\000" as tool_tool_000 #FEF3C7
+cloud "actions/download-artifact" as tool_actions_download_artifact #FEF3C7
 cloud "apt-get" as tool_apt_get #FEF3C7
 cloud "casonk/.github/.github/workflows/install-check.yml" as tool_casonk_github_github_workflows_install_check_yml #FEF3C7
+cloud "casonk/.github/.github/workflows/python-build.yml" as tool_casonk_github_github_workflows_python_build_yml #FEF3C7
 cloud "casonk/.github/.github/workflows/python-ci.yml" as tool_casonk_github_github_workflows_python_ci_yml #FEF3C7
-cloud "casonk/.github/.github/workflows/python-publish.yml" as tool_casonk_github_github_workflows_python_publish_yml #FEF3C7
 cloud "casonk/.github/.github/workflows/secret-scan.yml" as tool_casonk_github_github_workflows_secret_scan_yml #FEF3C7
 cloud "cat" as tool_cat #FEF3C7
 cloud "cc" as tool_cc #FEF3C7
@@ -36,6 +37,7 @@ cloud "nordility_require_install_tools" as tool_nordility_require_install_tools 
 cloud "nordility_require_single_line" as tool_nordility_require_single_line #FEF3C7
 cloud "nordility_stage_runtime" as tool_nordility_stage_runtime #FEF3C7
 cloud "podman" as tool_podman #FEF3C7
+cloud "pypa/gh-action-pypi-publish" as tool_pypa_gh_action_pypi_publish #FEF3C7
 cloud "rm" as tool_rm #FEF3C7
 cloud "run" as tool_run #FEF3C7
 cloud "sleep" as tool_sleep #FEF3C7
@@ -45,7 +47,9 @@ cloud "tachometer" as tool_tachometer #FEF3C7
 cloud "tr" as tool_tr #FEF3C7
 source_github_workflows_ci_yml --> tool_casonk_github_github_workflows_install_check_yml
 source_github_workflows_ci_yml --> tool_casonk_github_github_workflows_python_ci_yml
-source_github_workflows_python_publish_yml --> tool_casonk_github_github_workflows_python_publish_yml
+source_github_workflows_python_publish_yml --> tool_actions_download_artifact
+source_github_workflows_python_publish_yml --> tool_casonk_github_github_workflows_python_build_yml
+source_github_workflows_python_publish_yml --> tool_pypa_gh_action_pypi_publish
 source_github_workflows_secret_scan_yml --> tool_casonk_github_github_workflows_secret_scan_yml
 source_scripts_install_autoconnect_service_sh --> tool_cat
 source_scripts_install_autoconnect_service_sh --> tool_install
@@ -87,6 +91,6 @@ source_tests_containers_token_login_run_test_sh --> tool_tr
 source_tests_test_token_login_podman_sh --> tool_podman
 note as toolingGraphSummary
 Scanned 11 tooling entrypoints.
-Detected 27 third-party tools.
+Detected 29 third-party tools.
 end note
 @enduml
