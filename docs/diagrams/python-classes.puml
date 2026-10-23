@@ -1,4 +1,4 @@
-@startuml classes_nordility
+@startuml classes_checkout
 set namespaceSeparator none
 class "ActionOutcome" as src.nordility.web.ActionOutcome {
   repair

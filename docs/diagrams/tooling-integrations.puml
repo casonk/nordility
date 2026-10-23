@@ -1,5 +1,5 @@
 @startuml
-title nordility Tooling Integrations
+title checkout Tooling Integrations
 left to right direction
 skinparam shadowing false
 skinparam defaultFontName Monospace
@@ -12,7 +12,7 @@ rectangle "scripts/install_autoconnect_service.sh\n6 detected tools" as source_s
 rectangle "scripts/install_web_service.sh\n7 detected tools" as source_scripts_install_web_service_sh #E0F2FE
 rectangle "scripts/install_wireguard_watch_service.sh\n6 detected tools" as source_scripts_install_wireguard_watch_service_sh #E0F2FE
 rectangle "scripts/lib/install_runtime.sh\n4 detected tools" as source_scripts_lib_install_runtime_sh #E0F2FE
-rectangle "scripts/run_tachometer_profile.sh\n3 detected tools" as source_scripts_run_tachometer_profile_sh #E0F2FE
+rectangle "scripts/run_tachometer_profile.sh\n1 detected tool" as source_scripts_run_tachometer_profile_sh #E0F2FE
 rectangle "tests/containers/token-login/Containerfile\n6 detected tools" as source_tests_containers_token_login_containerfile #E0F2FE
 rectangle "tests/containers/token-login/run-test.sh\n5 detected tools" as source_tests_containers_token_login_run_test_sh #E0F2FE
 rectangle "tests/test_token_login_podman.sh\n1 detected tool" as source_tests_test_token_login_podman_sh #E0F2FE
@@ -39,9 +39,7 @@ cloud "nordility_stage_runtime" as tool_nordility_stage_runtime #FEF3C7
 cloud "podman" as tool_podman #FEF3C7
 cloud "pypa/gh-action-pypi-publish" as tool_pypa_gh_action_pypi_publish #FEF3C7
 cloud "rm" as tool_rm #FEF3C7
-cloud "run" as tool_run #FEF3C7
 cloud "sleep" as tool_sleep #FEF3C7
-cloud "summarize" as tool_summarize #FEF3C7
 cloud "systemctl" as tool_systemctl #FEF3C7
 cloud "tachometer" as tool_tachometer #FEF3C7
 cloud "tr" as tool_tr #FEF3C7
@@ -74,8 +72,6 @@ source_scripts_lib_install_runtime_sh --> tool_chmod
 source_scripts_lib_install_runtime_sh --> tool_chown
 source_scripts_lib_install_runtime_sh --> tool_mv
 source_scripts_lib_install_runtime_sh --> tool_rm
-source_scripts_run_tachometer_profile_sh --> tool_run
-source_scripts_run_tachometer_profile_sh --> tool_summarize
 source_scripts_run_tachometer_profile_sh --> tool_tachometer
 source_tests_containers_token_login_containerfile --> tool_apt_get
 source_tests_containers_token_login_containerfile --> tool_cc
@@ -91,6 +87,6 @@ source_tests_containers_token_login_run_test_sh --> tool_tr
 source_tests_test_token_login_podman_sh --> tool_podman
 note as toolingGraphSummary
 Scanned 11 tooling entrypoints.
-Detected 29 third-party tools.
+Detected 27 third-party tools.
 end note
 @enduml
