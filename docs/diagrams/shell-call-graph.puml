@@ -1,5 +1,5 @@
 @startuml
-title nordility Shell Script Flow
+title checkout Shell Script Flow
 left to right direction
 skinparam shadowing false
 skinparam defaultFontName Monospace
@@ -9,7 +9,7 @@ rectangle "scripts/install_autoconnect_service.sh\n0 local shell edges\n6 extern
 rectangle "scripts/install_web_service.sh\n0 local shell edges\n7 external tools" as shell_scripts_install_web_service_sh #DBEAFE
 rectangle "scripts/install_wireguard_watch_service.sh\n0 local shell edges\n6 external tools" as shell_scripts_install_wireguard_watch_service_sh #DBEAFE
 rectangle "scripts/lib/install_runtime.sh\n0 local shell edges\n4 external tools" as shell_scripts_lib_install_runtime_sh #DBEAFE
-rectangle "scripts/run_tachometer_profile.sh\n0 local shell edges\n3 external tools" as shell_scripts_run_tachometer_profile_sh #DBEAFE
+rectangle "scripts/run_tachometer_profile.sh\n0 local shell edges\n1 external tool" as shell_scripts_run_tachometer_profile_sh #DBEAFE
 rectangle "tests/containers/token-login/run-test.sh\n0 local shell edges\n5 external tools" as shell_tests_containers_token_login_run_test_sh #DBEAFE
 rectangle "tests/test_token_login_podman.sh\n0 local shell edges\n1 external tool" as shell_tests_test_token_login_podman_sh #DBEAFE
 cloud "\\000" as tool_tool_000 #FEF3C7
@@ -26,9 +26,7 @@ cloud "nordility_require_single_line" as tool_nordility_require_single_line #FEF
 cloud "nordility_stage_runtime" as tool_nordility_stage_runtime #FEF3C7
 cloud "podman" as tool_podman #FEF3C7
 cloud "rm" as tool_rm #FEF3C7
-cloud "run" as tool_run #FEF3C7
 cloud "sleep" as tool_sleep #FEF3C7
-cloud "summarize" as tool_summarize #FEF3C7
 cloud "systemctl" as tool_systemctl #FEF3C7
 cloud "tachometer" as tool_tachometer #FEF3C7
 cloud "tr" as tool_tr #FEF3C7
@@ -55,8 +53,6 @@ shell_scripts_lib_install_runtime_sh --> tool_chmod
 shell_scripts_lib_install_runtime_sh --> tool_chown
 shell_scripts_lib_install_runtime_sh --> tool_mv
 shell_scripts_lib_install_runtime_sh --> tool_rm
-shell_scripts_run_tachometer_profile_sh --> tool_run
-shell_scripts_run_tachometer_profile_sh --> tool_summarize
 shell_scripts_run_tachometer_profile_sh --> tool_tachometer
 shell_tests_containers_token_login_run_test_sh --> tool_tool_000
 shell_tests_containers_token_login_run_test_sh --> tool_head
@@ -67,6 +63,6 @@ shell_tests_test_token_login_podman_sh --> tool_podman
 note as shellGraphSummary
 Scanned 7 shell scripts.
 Detected 0 local shell edges.
-Detected 20 external tools.
+Detected 18 external tools.
 end note
 @enduml
