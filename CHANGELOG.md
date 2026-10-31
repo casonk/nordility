@@ -4,6 +4,7 @@ All notable changes to `nordility` are documented here.
 
 ## Unreleased
 
+- Load the portfolio top bar (`<script src="/_portfolio/chrome.js" defer></script>`, served by the shared Caddy) on the control page, so the global navigation and theme rotator appear here too.
 - Documented the project as platform-agnostic rather than Windows-first. The
   README now carries a platform support table covering Linux, macOS and
   Windows, separating what this package supports from what the underlying
