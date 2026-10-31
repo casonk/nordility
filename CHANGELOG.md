@@ -4,6 +4,8 @@ All notable changes to `nordility` are documented here.
 
 ## Unreleased
 
+- Refresh the vendored theme and top bar (High contrast white and Liberty themes, a theme drop-down menu). Redeploy with `scripts/install_web_service.sh` to stage the new module.
+
 - Let the root-service installers stage a module added to the runtime allowlist: the
   pre-stage check required every allowlisted file to already exist in `/opt/nordility`, so adding
   `portfolio_assets.py` failed with "protected runtime file must be a regular file". Existing
