@@ -200,6 +200,7 @@ INDEX_HTML = """<!doctype html>
       .row { flex-direction: column; }
     }
   </style>
+  <script src="/_portfolio/chrome.js" defer></script>
 </head>
 <body>
   <main>
