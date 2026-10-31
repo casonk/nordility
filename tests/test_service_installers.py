@@ -136,6 +136,19 @@ class ServiceInstallerRenderTests(unittest.TestCase):
 
 
 class ServiceRuntimeAllowlistTests(unittest.TestCase):
+    def test_preflight_accepts_a_module_added_since_the_last_staging(self) -> None:
+        script = (REPO_ROOT / "scripts" / "lib" / "install_runtime.sh").read_text(encoding="utf-8")
+        preflight = script.split("nordility_prepare_runtime_tree()")[1].split(
+            "nordility_stage_runtime()"
+        )[0]
+        # Existing files are still validated; a missing one (new allowlist entry) is skipped,
+        # and the check after staging validates every file.
+        self.assertIn('-e "${NORDILITY_RUNTIME_PACKAGE_ROOT}/${runtime_path}"', preflight)
+        self.assertIn('-L "${NORDILITY_RUNTIME_PACKAGE_ROOT}/${runtime_path}"', preflight)
+        self.assertIn("protected runtime file", preflight)
+        staged = script.split("nordility_stage_runtime()")[1]
+        self.assertIn("protected runtime file", staged)
+
     def test_runtime_allowlist_tracks_every_package_module(self) -> None:
         helper = (REPO_ROOT / "scripts" / "lib" / "install_runtime.sh").read_text()
         package_modules = sorted(
