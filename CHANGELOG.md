@@ -4,6 +4,11 @@ All notable changes to `nordility` are documented here.
 
 ## Unreleased
 
+- Let the root-service installers stage a module added to the runtime allowlist: the
+  pre-stage check required every allowlisted file to already exist in `/opt/nordility`, so adding
+  `portfolio_assets.py` failed with "protected runtime file must be a regular file". Existing
+  files are still validated, and every file is validated again after staging.
+
 - Serve the portfolio theme and top bar from root-owned code instead of the shared directory:
   the control page's policy forbids external files because it drives a root service, so
   `src/nordility/portfolio_assets.py` (vendored from traction-control, staged to `/opt/nordility`)

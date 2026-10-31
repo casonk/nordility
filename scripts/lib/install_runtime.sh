@@ -278,9 +278,15 @@ nordility_prepare_runtime_tree() {
     nordility_reject_unexpected_entries \
       "${NORDILITY_RUNTIME_PACKAGE_ROOT}" "${NORDILITY_RUNTIME_FILES[@]}" || return 1
     for runtime_path in "${NORDILITY_RUNTIME_FILES[@]}"; do
-      nordility_validate_regular_file \
-        "${NORDILITY_RUNTIME_PACKAGE_ROOT}/${runtime_path}" 0 0 \
-        "protected runtime file" || return 1
+      # A module added to the allowlist since the last staging is not there yet; staging
+      # creates it. Anything that does exist must still be a root-owned regular file
+      # (a symlink or other entry is rejected).
+      if [[ -e "${NORDILITY_RUNTIME_PACKAGE_ROOT}/${runtime_path}" ||
+        -L "${NORDILITY_RUNTIME_PACKAGE_ROOT}/${runtime_path}" ]]; then
+        nordility_validate_regular_file \
+          "${NORDILITY_RUNTIME_PACKAGE_ROOT}/${runtime_path}" 0 0 \
+          "protected runtime file" || return 1
+      fi
     done
   else
     nordility_reject_unexpected_entries "${NORDILITY_RUNTIME_SOURCE_ROOT}" || return 1
