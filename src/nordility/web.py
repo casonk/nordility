@@ -50,34 +50,19 @@ INDEX_HTML = """<!doctype html>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Nordility</title>
+  <link rel="stylesheet" href="/_portfolio/theme.css">
+  <script src="/_portfolio/theme.js"></script>
   <style>
     :root {
-      color-scheme: light dark;
-      --bg: #f5f7f8;
-      --panel: #ffffff;
-      --text: #162027;
-      --muted: #5b6871;
-      --line: #d7dde1;
-      --primary: #145a78;
-      --primary-text: #ffffff;
-      --danger: #a03030;
-      --ok: #2d6a4f;
-      --shadow: 0 1px 2px rgba(22, 32, 39, 0.08);
+      /* Colours come from the portfolio system theme (/_portfolio/theme.css). */
+      --panel: var(--surface);
+      --line: var(--border);
+      --primary: var(--accent);
+      --primary-text: var(--accent-ink);
+      --danger: var(--red);
+      --ok: var(--green);
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #101519;
-        --panel: #172027;
-        --text: #edf2f4;
-        --muted: #a7b3bc;
-        --line: #2d3a43;
-        --primary: #4ca3c7;
-        --primary-text: #071116;
-        --danger: #d56b6b;
-        --ok: #74c69d;
-        --shadow: none;
-      }
     }
     * { box-sizing: border-box; }
     body {
