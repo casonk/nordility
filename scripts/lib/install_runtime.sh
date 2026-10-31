@@ -9,6 +9,7 @@ NORDILITY_RUNTIME_FILES=(
   "__main__.py"
   "cli.py"
   "client.py"
+  "portfolio_assets.py"
   "token_login.py"
   "web.py"
 )
