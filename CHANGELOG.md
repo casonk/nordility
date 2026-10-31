@@ -4,6 +4,8 @@ All notable changes to `nordility` are documented here.
 
 ## Unreleased
 
+- Follow the portfolio system themes: the control page takes its colours from the shared tokens (`/_portfolio/theme.css`), so the theme chosen in the top bar restyles it. The built-in dark-mode media query is gone.
+
 - Load the portfolio top bar (`<script src="/_portfolio/chrome.js" defer></script>`, served by the shared Caddy) on the control page, so the global navigation and theme rotator appear here too.
 - Documented the project as platform-agnostic rather than Windows-first. The
   README now carries a platform support table covering Linux, macOS and
