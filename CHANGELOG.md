@@ -4,6 +4,8 @@ All notable changes to `nordility` are documented here.
 
 ## Unreleased
 
+- Refresh the vendored portfolio theme: adds the Hulk (purple and green) and Neon themes.
+
 - Refresh the vendored theme and top bar (High contrast white and Liberty themes, a theme drop-down menu). Redeploy with `scripts/install_web_service.sh` to stage the new module.
 
 - Let the root-service installers stage a module added to the runtime allowlist: the
