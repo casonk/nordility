@@ -34,6 +34,7 @@ from .client import (
     WireGuardRestoreSummary,
     restore_wireguard_after_nordvpn,
 )
+from .portfolio_assets import CHROME_JS, THEME_CSS, THEME_JS
 
 LOGGER = logging.getLogger("nordility.web")
 
@@ -44,17 +45,24 @@ _PUBLIC_INFO_TTL = 60.0
 _PUBLIC_INFO_URL = "https://ipinfo.io/json"
 
 
+PORTFOLIO_PREFIX = "/portfolio/"
+PORTFOLIO_ASSETS = {
+    f"{PORTFOLIO_PREFIX}theme.css": (THEME_CSS, "text/css; charset=utf-8"),
+    f"{PORTFOLIO_PREFIX}theme.js": (THEME_JS, "text/javascript; charset=utf-8"),
+    f"{PORTFOLIO_PREFIX}chrome.js": (CHROME_JS, "text/javascript; charset=utf-8"),
+}
+
 INDEX_HTML = """<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Nordility</title>
-  <link rel="stylesheet" href="/_portfolio/theme.css">
-  <script src="/_portfolio/theme.js"></script>
+  <link rel="stylesheet" href="/portfolio/theme.css">
+  <script src="/portfolio/theme.js"></script>
   <style>
     :root {
-      /* Colours come from the portfolio system theme (/_portfolio/theme.css). */
+      /* Colours come from the portfolio system theme (/portfolio/theme.css). */
       --panel: var(--surface);
       --line: var(--border);
       --primary: var(--accent);
@@ -185,7 +193,7 @@ INDEX_HTML = """<!doctype html>
       .row { flex-direction: column; }
     }
   </style>
-  <script src="/_portfolio/chrome.js" defer></script>
+  <script src="/portfolio/chrome.js" defer></script>
 </head>
 <body>
   <main>
@@ -545,11 +553,19 @@ def make_handler(
     class NordilityWebHandler(BaseHTTPRequestHandler):
         server_version = "NordilityWeb/1.0"
 
+        def _asset(self) -> tuple[bytes, str] | None:
+            asset = PORTFOLIO_ASSETS.get(self.path)
+            return None if asset is None else (asset[0].encode("utf-8"), asset[1])
+
         def do_GET(self) -> None:  # noqa: N802
             if self.path == "/" or self.path == "/index.html":
                 self._send_bytes(
                     HTTPStatus.OK, INDEX_HTML.encode("utf-8"), "text/html; charset=utf-8"
                 )
+                return
+            asset = self._asset()
+            if asset is not None:
+                self._send_bytes(HTTPStatus.OK, *asset)
                 return
             if self.path == "/api/status":
                 status = controller.status()
@@ -565,6 +581,10 @@ def make_handler(
                     len(INDEX_HTML.encode("utf-8")),
                     "text/html; charset=utf-8",
                 )
+                return
+            asset = self._asset()
+            if asset is not None:
+                self._send_headers(HTTPStatus.OK, len(asset[0]), asset[1])
                 return
             if self.path == "/api/status":
                 status = controller.status()
@@ -662,10 +682,13 @@ def make_handler(
             self.send_header("Cache-Control", "no-store")
             self.send_header("X-Content-Type-Options", "nosniff")
             self.send_header("X-Frame-Options", "DENY")
+            # The theme and top bar are served from this module's own root-owned copies under
+            # /portfolio/, so the policy allows exactly that path and no other external file.
+            assets = f"{trusted_origin}{PORTFOLIO_PREFIX}" if trusted_origin else "'self'"
             self.send_header(
                 "Content-Security-Policy",
-                "default-src 'none'; style-src 'unsafe-inline'; "
-                "script-src 'unsafe-inline'; connect-src 'self'; "
+                f"default-src 'none'; style-src 'unsafe-inline' {assets}; "
+                f"script-src 'unsafe-inline' {assets}; connect-src 'self'; "
                 "base-uri 'none'; frame-ancestors 'none'",
             )
             self.end_headers()

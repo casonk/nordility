@@ -4,6 +4,12 @@ All notable changes to `nordility` are documented here.
 
 ## Unreleased
 
+- Serve the portfolio theme and top bar from root-owned code instead of the shared directory:
+  the control page's policy forbids external files because it drives a root service, so
+  `src/nordility/portfolio_assets.py` (vendored from traction-control, staged to `/opt/nordility`)
+  is served under `/portfolio/` and the policy allows only that path. No user-writable file is
+  ever executed on this page. Regenerate with `scripts/vendor_portfolio_assets.py`.
+
 - Follow the portfolio system themes: the control page takes its colours from the shared tokens (`/_portfolio/theme.css`), so the theme chosen in the top bar restyles it. The built-in dark-mode media query is gone.
 
 - Load the portfolio top bar (`<script src="/_portfolio/chrome.js" defer></script>`, served by the shared Caddy) on the control page, so the global navigation and theme rotator appear here too.
