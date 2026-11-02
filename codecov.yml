@@ -1,0 +1,12 @@
+# Start informational: report coverage on pull requests without blocking them.
+# Add a target here once the baseline number is known.
+coverage:
+  status:
+    project:
+      default:
+        informational: true
+    patch:
+      default:
+        informational: true
+comment:
+  layout: "condensed_header, diff, files"

@@ -20,3 +20,7 @@ jobs:
     uses: casonk/.github/.github/workflows/python-ci.yml@main
     with:
       python-versions: '["3.10", "3.11", "3.12"]'
+      coverage: true
+      coverage-source: nordility
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

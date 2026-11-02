@@ -16,3 +16,9 @@ CLAUDE.md
 
 # Tooling caches and build artifacts
 .ruff_cache/
+
+# coverage output
+coverage.xml
+.coverage
+.coverage.*
+htmlcov/
