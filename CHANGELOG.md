@@ -4,6 +4,12 @@ All notable changes to `nordility` are documented here.
 
 ## Unreleased
 
+- Fix the web service's handling of bad input and a dead network: a malformed or non-UTF-8 JSON
+  body or a non-numeric `Content-Length` now returns 400 instead of 500, and a request body over
+  64 KiB is refused rather than read; a failed public-IP lookup is cached for the normal interval
+  so a disconnected, offline host no longer waits out the 5 s timeout on every status poll; and a
+  command that produces no stdout or stderr no longer crashes the status call.
+
 - Refresh the vendored portfolio theme: adds the Hulk (purple and green) and Neon themes.
 
 - Refresh the vendored theme and top bar (High contrast white and Liberty themes, a theme drop-down menu). Redeploy with `scripts/install_web_service.sh` to stage the new module.

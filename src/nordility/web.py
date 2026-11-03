@@ -41,6 +41,7 @@ LOGGER = logging.getLogger("nordility.web")
 DEFAULT_WEB_HOST = "127.0.0.1"
 DEFAULT_WEB_PORT = 5300
 DEFAULT_WEB_SOCKET_MODE = 0o660
+MAX_REQUEST_BODY_BYTES = 64 * 1024
 _PUBLIC_INFO_TTL = 60.0
 _PUBLIC_INFO_URL = "https://ipinfo.io/json"
 
@@ -437,12 +438,12 @@ class NordilityWebController:
         self._lock = threading.Lock()
         self._public_info_lock = threading.Lock()
         self._public_info_cache: dict[str, str] = {}
-        self._public_info_fetched_at: float = 0.0
+        self._public_info_fetched_at: float = float("-inf")
 
     def _fetch_public_info(self) -> dict[str, str]:
         with self._public_info_lock:
             now = time.monotonic()
-            if self._public_info_cache and (now - self._public_info_fetched_at) < _PUBLIC_INFO_TTL:
+            if (now - self._public_info_fetched_at) < _PUBLIC_INFO_TTL:
                 return self._public_info_cache
             try:
                 req = urllib.request.Request(
@@ -537,7 +538,7 @@ class NordilityWebController:
             result = self._runner(command, capture_output=True, text=True, check=False)
         except (OSError, FileNotFoundError) as exc:
             return f"{command[0]} unavailable: {exc}"
-        return (result.stdout or result.stderr).strip()
+        return (result.stdout or result.stderr or "").strip()
 
 
 def _json_bytes(data: dict[str, Any]) -> bytes:
@@ -646,11 +647,19 @@ def make_handler(
             return super().address_string()
 
         def _read_json(self) -> dict[str, Any]:
-            length = int(self.headers.get("Content-Length", "0"))
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+            except ValueError:
+                raise ConfigurationError("invalid Content-Length") from None
             if length <= 0:
                 return {}
+            if length > MAX_REQUEST_BODY_BYTES:
+                raise ConfigurationError("request body is too large")
             raw = self.rfile.read(length)
-            data = json.loads(raw.decode("utf-8"))
+            try:
+                data = json.loads(raw.decode("utf-8"))
+            except ValueError:
+                raise ConfigurationError("request body must be valid UTF-8 JSON") from None
             if not isinstance(data, dict):
                 raise ConfigurationError("request body must be a JSON object")
             return data
