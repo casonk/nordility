@@ -4,6 +4,8 @@ All notable changes to `nordility` are documented here.
 
 ## Unreleased
 
+- Report a non-UTF-8 `config/auto-pass.ini` as the usual "invalid config" error instead of crashing with a raw `UnicodeDecodeError`.
+
 - Fix the web service's handling of bad input and a dead network: a malformed or non-UTF-8 JSON
   body or a non-numeric `Content-Length` now returns 400 instead of 500, and a request body over
   64 KiB is refused rather than read; a failed public-IP lookup is cached for the normal interval

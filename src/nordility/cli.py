@@ -31,7 +31,7 @@ def _load_repo_auto_pass_config() -> dict[str, str]:
     try:
         with _AUTO_PASS_CONFIG_PATH.open(encoding="utf-8") as handle:
             parser.read_file(handle)
-    except (OSError, configparser.Error) as exc:
+    except (OSError, UnicodeDecodeError, configparser.Error) as exc:
         raise NordilityError(f"invalid config/auto-pass.ini: {exc}") from exc
 
     defaults: dict[str, str] = {}
