@@ -32,6 +32,7 @@ from .client import (
     NordilityError,
     NordVPNClient,
     WireGuardRestoreSummary,
+    _user_managed_wireguard_interfaces,
     restore_wireguard_after_nordvpn,
 )
 from .portfolio_assets import CHROME_JS, THEME_CSS, THEME_JS
@@ -61,6 +62,18 @@ INDEX_HTML = """<!doctype html>
   <title>Nordility</title>
   <link rel="stylesheet" href="/portfolio/theme.css">
   <script src="/portfolio/theme.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      fetch("/_portfolio/global", {credentials: "same-origin"})
+        .then(function (response) { return response.ok ? response.json() : null; })
+        .then(function (data) {
+          if (data && window.PortfolioTheme && window.PortfolioTheme.followGlobal) {
+            window.PortfolioTheme.followGlobal(data.global);
+          }
+        })
+        .catch(function () {});
+    });
+  </script>
   <style>
     :root {
       /* Colours come from the portfolio system theme (/portfolio/theme.css). */
@@ -139,6 +152,59 @@ INDEX_HTML = """<!doctype html>
     }
     .state-connected { color: var(--ok); font-weight: 650; }
     .state-disconnected { color: var(--danger); font-weight: 650; }
+    .path-note {
+      margin: -4px 0 14px;
+      color: var(--muted);
+      font-size: .85rem;
+    }
+    .network-path {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 24px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .network-node {
+      position: relative;
+      min-width: 0;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+    .network-node:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      top: 50%;
+      right: -20px;
+      color: var(--muted);
+      transform: translate(50%, -50%);
+    }
+    .network-node label {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--muted);
+      font-size: .72rem;
+      font-weight: 650;
+      text-transform: uppercase;
+    }
+    .network-node div {
+      overflow-wrap: anywhere;
+      font-weight: 650;
+    }
+    .network-node small {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+    .network-path[data-connected="true"] .network-node:nth-child(4) {
+      border-color: var(--ok);
+    }
+    .network-path[data-connected="true"] .network-node:nth-child(4) div {
+      color: var(--ok);
+    }
     .controls {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -191,6 +257,14 @@ INDEX_HTML = """<!doctype html>
     @media (max-width: 520px) {
       main { padding: 12px; }
       .status-grid, .controls { grid-template-columns: 1fr; }
+      .network-path { grid-template-columns: 1fr; gap: 20px; }
+      .network-node:not(:last-child)::after {
+        content: "↓";
+        top: auto;
+        right: 50%;
+        bottom: -19px;
+        transform: translate(50%, 50%);
+      }
       .row { flex-direction: column; }
     }
   </style>
@@ -211,6 +285,39 @@ INDEX_HTML = """<!doctype html>
         <div class="metric"><label>Country</label><div id="country">--</div></div>
         <div class="metric"><label>IP</label><div id="ip">--</div></div>
       </div>
+    </section>
+
+    <section>
+      <h2>Traffic path</h2>
+      <p class="path-note">Connection route only; this view does not inspect destinations or traffic contents.</p>
+      <ol class="network-path" id="network-path" aria-label="Current network path">
+        <li class="network-node">
+          <label>Source</label>
+          <div>Connected device</div>
+          <small>Client traffic</small>
+        </li>
+        <li class="network-node">
+          <label>WireGuard</label>
+          <div id="path-wireguard">Checking</div>
+          <small>Tunnel to Nordility host</small>
+        </li>
+        <li class="network-node">
+          <label>Gateway</label>
+          <div>Nordility host</div>
+          <small>VPN routing point</small>
+        </li>
+        <li class="network-node">
+          <label>Internet route</label>
+          <div id="path-route">Loading</div>
+          <small id="path-exit">--</small>
+          <small id="path-country">--</small>
+        </li>
+        <li class="network-node">
+          <label>Destination</label>
+          <div>Internet</div>
+          <small id="path-ip">IP unavailable</small>
+        </li>
+      </ol>
     </section>
 
     <section>
@@ -259,11 +366,22 @@ INDEX_HTML = """<!doctype html>
       actionsEnabled = data.actions_enabled === true;
       const lines = (data.nordvpn_status || "").split("\\n").map((line) => line.trim()).filter(Boolean);
       const state = statusValue(lines, "Status") || "Unknown";
+      const connected = state.toLowerCase().startsWith("connected");
+      const server = statusValue(lines, "Hostname") || statusValue(lines, "Server");
+      const country = statusValue(lines, "Country") || data.public_country || "";
+      const ip = statusValue(lines, "IP") || data.public_ip || "";
+      const wireguard = (data.wireguard_interfaces || []).join(", ");
       $("state").textContent = state;
-      $("state").className = state.toLowerCase().includes("connected") ? "state-connected" : "state-disconnected";
-      $("server").textContent = statusValue(lines, "Hostname") || statusValue(lines, "Server") || "--";
-      $("country").textContent = statusValue(lines, "Country") || data.public_country || "--";
-      $("ip").textContent = statusValue(lines, "IP") || data.public_ip || "--";
+      $("state").className = connected ? "state-connected" : "state-disconnected";
+      $("server").textContent = server || "--";
+      $("country").textContent = country || "--";
+      $("ip").textContent = ip || "--";
+      $("network-path").dataset.connected = String(connected);
+      $("path-wireguard").textContent = wireguard || "Not detected";
+      $("path-route").textContent = connected ? "NordVPN tunnel" : "Direct connection";
+      $("path-exit").textContent = connected ? (server || "VPN exit server") : "Local network";
+      $("path-country").textContent = connected ? (country || "Location unavailable") : "Internet service provider";
+      $("path-ip").textContent = ip ? "Public IP: " + ip : "Public IP unavailable";
       $("details").textContent = data.details || data.nordvpn_status || "--";
       $("updated").textContent = new Date().toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"});
 
@@ -464,6 +582,7 @@ class NordilityWebController:
 
     def status(self) -> dict[str, Any]:
         nordvpn_status = self._run_text([self.client.executable, "status"])
+        wireguard_interfaces = self._active_wireguard_interfaces()
         wg_fwmarks = self._run_text(["wg", "show", "all", "fwmark"])
         ip_rules = self._run_text(["ip", "rule", "show"])
         details = "\n\n".join(
@@ -477,6 +596,7 @@ class NordilityWebController:
         )
         out: dict[str, Any] = {
             "nordvpn_status": nordvpn_status,
+            "wireguard_interfaces": wireguard_interfaces,
             "details": details,
             "groups": {speed: list(groups) for speed, groups in GROUPS_BY_SPEED.items()},
         }
@@ -486,6 +606,24 @@ class NordilityWebController:
                 out["public_ip"] = public.get("ip", "")
                 out["public_country"] = public.get("country", "")
         return out
+
+    def _active_wireguard_interfaces(self) -> list[str]:
+        try:
+            result = self._runner(
+                ["wg", "show", "interfaces"],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except OSError:
+            LOGGER.debug("Could not enumerate WireGuard interfaces", exc_info=True)
+            return []
+        if result.returncode != 0:
+            return []
+        return _user_managed_wireguard_interfaces(
+            result.stdout.split(),
+            config_dir=self._wireguard_config_dir,
+        )
 
     def perform_action(self, payload: dict[str, Any]) -> ActionOutcome:
         action = str(payload.get("action", "")).strip()
