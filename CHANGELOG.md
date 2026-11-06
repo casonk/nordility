@@ -12,6 +12,13 @@ All notable changes to `nordility` are documented here.
   so a disconnected, offline host no longer waits out the 5 s timeout on every status poll; and a
   command that produces no stdout or stderr no longer crashes the status call.
 
+- Add a privacy-safe connection topology showing a connected device passing
+  through WireGuard and NordVPN to the internet, without tracking destinations.
+
+- Follow the current global theme through the read-only, same-origin
+  `/_portfolio/global` response while keeping the root service's theme scripts
+  in root-owned code.
+
 - Refresh the vendored portfolio theme: adds the Hulk (purple and green) and Neon themes.
 
 - Refresh the vendored theme and top bar (High contrast white and Liberty themes, a theme drop-down menu). Redeploy with `scripts/install_web_service.sh` to stage the new module.

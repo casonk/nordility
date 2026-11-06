@@ -19,14 +19,41 @@ def test_every_page_loads_the_portfolio_top_bar():
 def test_page_takes_its_colours_from_the_shared_theme():
     import re
 
-    from nordility.web import INDEX_HTML
+    from nordility.web import INDEX_HTML, PORTFOLIO_ASSETS
 
     assert '<link rel="stylesheet" href="/portfolio/theme.css">' in INDEX_HTML
     assert '<script src="/portfolio/theme.js"></script>' in INDEX_HTML
+    assert 'fetch("/_portfolio/global", {credentials: "same-origin"})' in INDEX_HTML
+    assert "window.PortfolioTheme.followGlobal(data.global)" in INDEX_HTML
+    assert "function followGlobal(name)" in PORTFOLIO_ASSETS["/portfolio/theme.js"][0]
     style = INDEX_HTML.split("<style>")[1].split("</style>")[0]
     style = re.sub(r"var\([^)]*\)", "", style)
     lines = [ln for ln in style.splitlines() if "shadow" not in ln]
     assert re.findall(r"#[0-9a-fA-F]{3,8}\b|rgba?\(", "\n".join(lines)) == []
+
+
+def test_page_shows_a_privacy_safe_dynamic_network_path():
+    from nordility.web import INDEX_HTML
+
+    for text in (
+        "<h2>Traffic path</h2>",
+        'id="network-path"',
+        "Connected device",
+        'id="path-wireguard"',
+        'id="path-route"',
+        'id="path-exit"',
+        'id="path-ip"',
+        "does not inspect destinations or traffic contents",
+        "dataset.connected = String(connected)",
+        "data.wireguard_interfaces",
+        'state.toLowerCase().startsWith("connected")',
+    ):
+        assert text in INDEX_HTML
+    labels = [
+        INDEX_HTML.index(f"<label>{name}</label>")
+        for name in ("Source", "WireGuard", "Gateway", "Internet route", "Destination")
+    ]
+    assert labels == sorted(labels)
 
 
 def test_assets_are_served_from_root_owned_code_and_the_csp_is_pinned_to_them():

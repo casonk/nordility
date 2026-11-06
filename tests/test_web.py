@@ -30,14 +30,26 @@ class NordilityWebControllerTests(unittest.TestCase):
                     stdout="Status: Connected\nHostname: us1.nordvpn.com\nCountry: United States\n",
                     stderr="",
                 )
+            if tuple(command) == ("wg", "show", "interfaces"):
+                return CompletedProcess(command, 0, stdout="nordlynx wg0 wg1\n", stderr="")
             return CompletedProcess(command, 0, stdout="", stderr="")
 
-        controller = NordilityWebController(executable="nordvpn", backend="cli", runner=runner)
+        with tempfile.TemporaryDirectory() as tmp:
+            config_dir = Path(tmp)
+            (config_dir / "wg0.conf").write_text("[Interface]\n", encoding="utf-8")
+            (config_dir / "nordlynx.conf").write_text("[Interface]\n", encoding="utf-8")
+            controller = NordilityWebController(
+                executable="nordvpn",
+                backend="cli",
+                runner=runner,
+                wireguard_config_dir=config_dir,
+            )
 
-        status = controller.status()
+            status = controller.status()
 
         self.assertIn("United_States", status["groups"]["fast"])
         self.assertIn("Status: Connected", status["nordvpn_status"])
+        self.assertEqual(status["wireguard_interfaces"], ["wg0"])
 
     def test_rejects_unknown_group(self) -> None:
         controller = NordilityWebController(executable="nordvpn", backend="cli")
@@ -138,6 +150,20 @@ class NordilityWebControllerTests(unittest.TestCase):
         )
 
         json.dumps(controller.status())
+
+    def test_wireguard_interfaces_are_empty_when_command_fails(self) -> None:
+        controller = NordilityWebController(
+            executable="nordvpn",
+            backend="cli",
+            runner=lambda command, capture_output, text, check: CompletedProcess(
+                command,
+                1 if tuple(command) == ("wg", "show", "interfaces") else 0,
+                stdout="",
+                stderr="not available",
+            ),
+        )
+
+        self.assertEqual(controller.status()["wireguard_interfaces"], [])
 
     def _make_disconnected_controller(self):
         def runner(command, capture_output, text, check):
