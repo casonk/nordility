@@ -4,6 +4,7 @@ All notable changes to `nordility` are documented here.
 
 ## Unreleased
 
+- Match the portfolio type scale: take the font, size and monospace stack from the shared theme tokens (`--font`, `--font-size`, `--mono`) so the top bar's font choice applies here, and keep the page heading at the home page's scale.
 - Report a non-UTF-8 `config/auto-pass.ini` as the usual "invalid config" error instead of crashing with a raw `UnicodeDecodeError`.
 
 - Fix the web service's handling of bad input and a dead network: a malformed or non-UTF-8 JSON
