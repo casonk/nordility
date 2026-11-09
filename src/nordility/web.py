@@ -84,7 +84,8 @@ INDEX_HTML = """<!doctype html>
       --danger: var(--red);
       --ok: var(--green);
       --shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: var(--font, system-ui, -apple-system, "Segoe UI", sans-serif);
+      font-size: var(--font-size, 14px);
     }
     * { box-sizing: border-box; }
     body {
@@ -106,7 +107,7 @@ INDEX_HTML = """<!doctype html>
     }
     h1 {
       margin: 0;
-      font-size: 1.45rem;
+      font-size: 1.25rem;
       letter-spacing: 0;
     }
     .timestamp {
