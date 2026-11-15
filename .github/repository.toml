@@ -4,6 +4,7 @@
 [repository]
 # One line shown on GitHub. Keep it free of private repository names and local paths.
 description = "VPN switching and connection orchestration helpers for NordVPN-based network routing and secure access workflows."
+topics = ["nordvpn", "vpn", "networking", "python", "cli", "automation"]
 
 [main_branch]
 # Direct commits and pushes to main are refused unless this is true.
