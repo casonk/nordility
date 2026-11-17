@@ -4,6 +4,8 @@ All notable changes to `nordility` are documented here.
 
 ## Unreleased
 
+- Stop the WireGuard watcher from reporting permanent "routing drift": NordVPN moves the kernel `from all lookup local` rule to the watcher's reserved ip-rule priority while connected, which the exact-one-rule check counted as a conflict. The watcher now ignores that rule, so it no longer loops every interval refreshing handshakes and refusing the restore.
+
 - The Linux CLI backend now also accepts spaced group names (`United Kingdom`) and passes the underscored form (`United_Kingdom`) that the NordVPN CLI requires.
 
 - Fix the boot auto-connect: the Linux CLI backend now passes group names unchanged (`United_States`) instead of converting them to `United States`, which the current NordVPN CLI rejects as "server does not exist". The generated `nordility-autoconnect.service` also orders after `snap.nordvpn.nordvpnd.service` and retries on failure (`Restart=on-failure`, `RestartSec=10`) so early-boot DNS failures no longer leave the VPN down.

@@ -888,6 +888,11 @@ def _ip_rule_priority_state(
             continue
         priority_token = tokens[0][:-1] if tokens[0].endswith(":") else tokens[0]
         if priority_token.isdecimal() and int(priority_token) == ip_rule_priority:
+            # NordVPN relocates the kernel ``from all lookup local`` rule to
+            # priority 100 while connected.  It is not a competing policy
+            # rule, and counting it made the watcher report permanent drift.
+            if tokens[1:] == ["from", "all", "lookup", "local"]:
+                continue
             rules_at_priority.append(line)
 
     if not rules_at_priority:
