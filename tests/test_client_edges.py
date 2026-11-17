@@ -378,6 +378,11 @@ class IpRuleMatchTests(unittest.TestCase):
         self.assertEqual(state(f"{OWNED_LINE}\n{OWNED_LINE}\n"), "conflict")
         self.assertEqual(state(f"{OWNED_LINE}\n{PRIORITY}:\tfrom all lookup 5\n"), "conflict")
         self.assertEqual(state(f"{PRIORITY}x:\tfrom all\n"), "absent")
+        # NordVPN moves the kernel "local" rule to the same priority; ignore it.
+        local = f"{PRIORITY}:\tfrom all lookup local"
+        self.assertEqual(state(f"{OWNED_LINE}\n{local}\n"), "owned")
+        self.assertEqual(state(f"{local}\n"), "absent")
+        self.assertEqual(state(f"{local}\n{PRIORITY}:\tfrom all lookup 5\n"), "conflict")
 
     def test_has_fwmark_is_true_only_for_owned(self) -> None:
         run = Scripted({("ip", "rule", "show"): cp(0, OWNED_LINE)})
