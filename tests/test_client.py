@@ -149,7 +149,7 @@ class NordVPNClientTests(unittest.TestCase):
         self.assertEqual(recorded["command"], ("nordvpn", "disconnect"))
         self.assertEqual(result.message, "VPN Disconnected")
 
-    def test_cli_group_replaces_underscores_with_spaces(self) -> None:
+    def test_cli_group_keeps_underscored_names(self) -> None:
         recorded = {}
 
         def fake_runner(command, capture_output, text, check):
@@ -166,6 +166,24 @@ class NordVPNClientTests(unittest.TestCase):
         client.connect(group="United_States", wait_seconds=0)
 
         self.assertEqual(recorded["command"], ("nordvpn", "connect", "United_States"))
+
+    def test_cli_connect_accepts_spaced_group_names(self) -> None:
+        recorded = {}
+
+        def fake_runner(command, capture_output, text, check):
+            recorded["command"] = command
+            return CompletedProcess(command, 0, stdout="ok", stderr="")
+
+        client = NordVPNClient(
+            executable="nordvpn",
+            backend="cli",
+            runner=fake_runner,
+            sleeper=lambda _: None,
+        )
+
+        client.connect(group="United Kingdom", wait_seconds=0)
+
+        self.assertEqual(recorded["command"], ("nordvpn", "connect", "United_Kingdom"))
 
     def test_login_passes_token_only_over_helper_stdin(self) -> None:
         recorded = {}

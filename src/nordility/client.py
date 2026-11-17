@@ -1170,7 +1170,8 @@ def resolve_backend(executable: str, backend: str) -> str:
 def _format_group(group: str, backend: str) -> str:
     # The NordVPN Linux CLI (6.x) lists and accepts underscored names such as
     # ``United_States``; the spaced form is rejected ("server does not exist").
-    return group
+    # Accept either spelling and always hand the CLI the underscored one.
+    return group if backend == "windows" else "_".join(group.split())
 
 
 class NordVPNClient:
