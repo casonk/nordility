@@ -1050,7 +1050,7 @@ class ClientFlowTests(unittest.TestCase):
         self.assertEqual(cli._build_connect_command(), ("/usr/bin/nordvpn", "connect"))
         self.assertEqual(
             cli._build_connect_command("United_States"),
-            ("/usr/bin/nordvpn", "connect", "United States"),
+            ("/usr/bin/nordvpn", "connect", "United_States"),
         )
         self.assertEqual(cli._build_disconnect_command(), ("/usr/bin/nordvpn", "disconnect"))
         win = self.make(backend="windows")

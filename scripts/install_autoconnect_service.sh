@@ -86,11 +86,16 @@ render_unit() {
 Description=Nordility boot auto-connect
 Documentation=https://github.com/casonk/nordility
 Wants=network-online.target
-After=network-online.target
+After=network-online.target snap.nordvpn.nordvpnd.service
+StartLimitIntervalSec=600
+StartLimitBurst=30
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+# DNS and the NordVPN daemon are often not ready at first boot attempt; retry.
+Restart=on-failure
+RestartSec=10
 WorkingDirectory=${NORDILITY_RUNTIME_ROOT}
 Environment=PYTHONPATH=${NORDILITY_RUNTIME_SOURCE_ROOT}
 Environment=PYTHONDONTWRITEBYTECODE=1
