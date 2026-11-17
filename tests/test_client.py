@@ -165,7 +165,7 @@ class NordVPNClientTests(unittest.TestCase):
 
         client.connect(group="United_States", wait_seconds=0)
 
-        self.assertEqual(recorded["command"], ("nordvpn", "connect", "United States"))
+        self.assertEqual(recorded["command"], ("nordvpn", "connect", "United_States"))
 
     def test_login_passes_token_only_over_helper_stdin(self) -> None:
         recorded = {}

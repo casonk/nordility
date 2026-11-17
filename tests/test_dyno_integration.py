@@ -55,7 +55,7 @@ class SubprocessPatchCliTests(unittest.TestCase):
             result = _cli_client(recorder).connect(group="United_States", wait_seconds=0)
 
         self.assertEqual(recorder.call_count, 1)
-        self.assertEqual(recorder.calls[0].args, ("nordvpn", "connect", "United States"))
+        self.assertEqual(recorder.calls[0].args, ("nordvpn", "connect", "United_States"))
         self.assertEqual(result.message, "VPN Connected to United_States")
         self.assertEqual(result.group, "United_States")
 

@@ -4,6 +4,8 @@ All notable changes to `nordility` are documented here.
 
 ## Unreleased
 
+- Fix the boot auto-connect: the Linux CLI backend now passes group names unchanged (`United_States`) instead of converting them to `United States`, which the current NordVPN CLI rejects as "server does not exist". The generated `nordility-autoconnect.service` also orders after `snap.nordvpn.nordvpnd.service` and retries on failure (`Restart=on-failure`, `RestartSec=10`) so early-boot DNS failures no longer leave the VPN down.
+
 - Match the portfolio type scale: take the font, size and monospace stack from the shared theme tokens (`--font`, `--font-size`, `--mono`) so the top bar's font choice applies here, and keep the page heading at the home page's scale.
 - Report a non-UTF-8 `config/auto-pass.ini` as the usual "invalid config" error instead of crashing with a raw `UnicodeDecodeError`.
 
