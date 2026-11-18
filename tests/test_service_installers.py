@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 import unittest
@@ -83,6 +84,28 @@ class ServiceInstallerRenderTests(unittest.TestCase):
         self.assertIn("connect --group Japan", result.stdout)
         self.assertNotIn("--auto-login", result.stdout)
         self.assertNotIn("keepass", result.stdout.lower())
+
+    def test_autoconnect_render_retries_and_orders_after_the_nordvpn_daemon(self) -> None:
+        result = self.render("install_autoconnect_service.sh", "--group", "United_States")
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        unit, _, service = result.stdout.partition("[Service]")
+        # Boot-time DNS and the daemon are not ready on the first attempt.
+        self.assertIn("After=network-online.target snap.nordvpn.nordvpnd.service", unit)
+        self.assertIn("StartLimitIntervalSec=600", unit)
+        self.assertIn("StartLimitBurst=30", unit)
+        self.assertIn("Type=oneshot", service)
+        self.assertIn("RemainAfterExit=yes", service)
+        self.assertIn("Restart=on-failure", service)
+        self.assertIn("RestartSec=10", service)
+        # The group reaches the CLI underscored, never space-separated.
+        self.assertIn("connect --group United_States", service)
+        # The retry budget must fit inside the start-limit window, or systemd
+        # would stop retrying before the attempts are used up.
+        values = dict(re.findall(r"^(\w+)=(\d+)$", result.stdout, re.MULTILINE))
+        attempts = int(values["StartLimitBurst"])
+        delay = int(values["RestartSec"])
+        self.assertLess(attempts * delay, int(values["StartLimitIntervalSec"]))
 
     def test_web_render_preserves_service_arguments(self) -> None:
         result = self.render(
