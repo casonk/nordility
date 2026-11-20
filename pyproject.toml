@@ -7,7 +7,7 @@ name = "nordility"
 version = "0.1.0"
 description = "Simple NordVPN automation helpers extracted from citegres."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 authors = [
   { name = "Cason Konzer", email = "casonk@umich.edu" },
 ]
@@ -43,11 +43,11 @@ dev = [
 ]
 [tool.black]
 line-length = 100
-target-version = ["py310"]
+target-version = ["py311"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
